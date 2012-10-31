@@ -1,0 +1,16 @@
+parsing a raw JSON string: { "some": "JSON source" }
+{"some":"JSON source"}
+
+parsing a JSON AST: {"some":"JSON source"}
+{
+  "some": "JSON source"
+}
+
+converting tuple to a JSON AST: (1, "one")
+[1,"one"]
+
+converting a JSON AST to a tuple: [1,"one"]
+(1,one)
+
+converting a case class to a JSON AST: case class Foo(bar: Int, baz: String)
+[2,"two"]
