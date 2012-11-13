@@ -13,7 +13,7 @@ To change the number of workers, add or remove `Worker` actors from the workers 
 
 Pi is estimated by summing elements in an infinite series derived from the following equation:
 
-![Pi equation](https://raw.github.com/JamesEarlDouglas/pi-cost/master/readme/pi-series.png)
+![Pi equation](https://raw.github.com/JamesEarlDouglas/scala-scratchpad/master/pi-cost/readme/pi-series.png)
 
 The evaluation of each element in the the series can be carried out independently, then combined with one another at the end, making this a perfect problem for distributed computing.
 
