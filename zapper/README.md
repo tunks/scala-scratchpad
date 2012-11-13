@@ -6,7 +6,7 @@ It is interesting to experiment with CQRS and EDA, which together can provide th
 
 An architecture built on Command Query Responsibility Separation has a data flow which can be modeled as a triangle:
 
-![CQRS data flow](https://raw.github.com/JamesEarlDouglas/zapper/master/readme/cqrs-data-flow.png)
+![CQRS data flow](https://raw.github.com/JamesEarlDouglas/scala-scratchpad/master/zapper/readme/cqrs-data-flow.png)
 
 The majority of user interaction with the Web application is to pull a representation of the view model via queries. Changes to the system are issued by the user as commands, which are processed by the domain and result in events broadcast to the view.
 
@@ -18,8 +18,8 @@ The view actor, `ZapViewer`, handles incoming events from the domain as well as 
 
 The result is Zapper, a somewhat Twitter-like Web application that is (theoretically) quite scalable. Zapper supports `@mentions` and following of other users. To see what it looks like, imagine two Zapper users: jmcdoe and kadigan.
 
-![Zapper screenshot for jmcdoe](https://raw.github.com/JamesEarlDouglas/zapper/master/readme/zapper-jmcdoe.png)
+![Zapper screenshot for jmcdoe](https://raw.github.com/JamesEarlDouglas/scala-scratchpad/master/zapper/readme/zapper-jmcdoe.png)
 
-![Zapper screenshot for kadigan](https://raw.github.com/JamesEarlDouglas/zapper/master/readme/zapper-kadigan.png)
+![Zapper screenshot for kadigan](https://raw.github.com/JamesEarlDouglas/scala-scratchpad/master/zapper/readme/zapper-kadigan.png)
 
 I didn't implement Event Sourcing, opting to only keep a single current view model. Though this limits the ability to audit or roll-back the state of the system, it yields a simpler architecture. 
