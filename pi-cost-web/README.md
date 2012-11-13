@@ -8,11 +8,11 @@ This example builds on [Estimating Pi with Akka](https://github.com/JamesEarlDou
 
 Upon starting, the user is presented with a page showing the current estimate of Pi, the size of each work unit, the delay between sending each work unit to the actors, the number of working actors, and the status of all actors.
 
-![Pi Cost screenshot](https://raw.github.com/JamesEarlDouglas/pi-cost-web/master/readme/pi-cost-web-start.png)
+![Pi Cost screenshot](https://raw.github.com/JamesEarlDouglas/scala-scratchpad/master/pi-cost-web/readme/pi-cost-web-start.png)
 
 Once the first actors are added, the work begins. The estimate of Pi updates every quarter second (via Ajax), as does the status of the actors. Larger work units combined with shorter delays will cause work units to queue up in the actor mailboxes, and the load can be managed by adding more actors. In a production application the actors would be scaled out as remote actors, but for this example they are run locally.
 
-![Pi Cost screenshot](https://raw.github.com/JamesEarlDouglas/pi-cost-web/master/readme/pi-cost-web-running.png)
+![Pi Cost screenshot](https://raw.github.com/JamesEarlDouglas/scala-scratchpad/master/pi-cost-web/readme/pi-cost-web-running.png)
 
 The most significant code addition is the Coordinator class, which keeps track of all the workers and sends work units to them based on a set size and delay. I suspect there is a more elegant and Scalaly way to build a scheduled executor than this, which is a `Runnable` with a `while(true)`.
 
