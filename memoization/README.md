@@ -6,7 +6,7 @@ Project Euler problem 15 is an interesting case for optimization by memoization.
 
 > Starting in the top left corner of a 2x2 grid, there are 6 routes (without backtracking) to the bottom right corner.
 
-> ![Project Euler problem 15](https://raw.github.com/JamesEarlDouglas/memoization/master/readme/problem15.png)
+> ![Project Euler problem 15](https://raw.github.com/JamesEarlDouglas/scala-scratchpad/master/memoization/readme/problem15.png)
 
 > How many routes are there through a 20x20 grid?
 
