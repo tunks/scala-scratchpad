@@ -4,7 +4,7 @@ _17 Apr 2011_
 
 Swarm is a Scala continuations framework which allows computation to be moved from one machine to another. This example shows how it can be extended to use Akka actors to transport computation between actors.
 
-![Transporter UML](https://github.com/JamesEarlDouglas/akka-swarm/raw/master/readme/akka-swarm.png)
+![Transporter UML](https://github.com/JamesEarlDouglas/scala-scratchpad/blob/master/akka-swarm/readme/akka-swarm.png)
 
 To use Swarm, `Transporter.transport` must be implemented to deliver continuations between nodes. For Akka, this means sending each continuation as a message.
 
@@ -74,7 +74,7 @@ object AkkaTest {
 
 The flow of execution of this code looks something like the following.
 
-![Flow of execution](https://github.com/JamesEarlDouglas/akka-swarm/raw/master/readme/akka-swarm-flow.png)
+![Flow of execution](https://github.com/JamesEarlDouglas/scala-scratchpad/blob/master/akka-swarm/readme/akka-swarm-flow.png)
 
 The output of the above `main` methods shows the code moving from actor to actor.
 
