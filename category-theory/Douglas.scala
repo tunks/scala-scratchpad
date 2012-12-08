@@ -5,7 +5,7 @@ trait Functor[A, F[_]] {
 }
 
 class Fn1Functor[A, B](g: A => B) extends Functor[B, ({type λ[α] = A => α})#λ] {
-  def map[C](f: B => C): (A => C) = { a => f(g(a)) }
+  override def map[C](f: B => C): (A => C) = { a => f(g(a)) }
 }
 
 object Fn1Functor {
@@ -18,9 +18,8 @@ trait Monad[A, F[_]] extends Functor[A, F] {
   def flatMap[B](f: A => F[B]): F[B]
 }
 
-class Fn1Monad[A, B](g: A => B) extends Fn1Functor[A, B](g) {
-  def flatMap[C](f: B => (A => C)): (A => C) =
-    { a => f(g(a))(a) }
+class Fn1Monad[A, B](g: A => B) extends Fn1Functor[A, B](g) with Monad[B, ({type λ[α] = A => α})#λ] {
+  override def flatMap[C](f: B => (A => C)): (A => C) = { a => f(g(a))(a) }
 }
 
 object Fn1Monad {
@@ -32,23 +31,25 @@ object Fn1Monad {
 
 object Demo extends App {
 
-  val add1: Int => Int = { x => x + 1 }
-  val times2: Int => Int = { x => x * 2 }
-  val times: Int => Int => Int = { x => y => x * y }
+  fn1FunctorDemo()
+  fn1MonadDemo()
 
-  functorDemo()
-  monadDemo()
-
-  def functorDemo() {
+  def fn1FunctorDemo() {
     import Fn1Functor._
+
+    val add1: Int => Int = { x => x + 1 }
+    val times2: Int => Int = { x => x * 2 }
 
     val map1: Int => Int = add1.map(times2)
     println("map1(5) = " + map1(5))
 
   }
 
-  def monadDemo() {
+  def fn1MonadDemo() {
     import Fn1Monad._
+
+    val add1: Int => Int = { x => x + 1 }
+    val times: Int => Int => Int = { x => y => x * y }
 
     val flatMap1: Int => Int = add1.flatMap(times)
     println("flatMap1(5) = " + flatMap1(5))
