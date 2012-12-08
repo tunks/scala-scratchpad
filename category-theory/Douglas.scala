@@ -1,3 +1,23 @@
+// Semigroup
+
+trait Semigroup[A] {
+  def append(a: A): A
+}
+
+class IntSemigroup(x: Int) extends Semigroup[Int] {
+  override def append(a: Int) = x + a
+}
+
+object IntSemigroup {
+  implicit def apply(x: Int) = new IntSemigroup(x)
+}
+
+// Monoid
+
+trait Monoid[A] extends Semigroup[A] {
+  def empty: A
+}
+
 // Functor
 
 trait Functor[A, F[_]] {
