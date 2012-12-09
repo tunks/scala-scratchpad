@@ -1,6 +1,14 @@
 # Type Classes, Category Theory and Scala
 
+_8 December 2012_
+
+This is a light reference for Scala implementations of some commonly used aspects of category theory.
+
+This document will grow over time, as I learn more about the theory, and discover new ways to apply it.
+
 ## Functor
+
+A functor lifts a function of type `A => B` to a function of type `F[A] => F[B]`
 
 ```scala
 trait Functor[A, F[_]] {
@@ -8,9 +16,7 @@ trait Functor[A, F[_]] {
 }
 ```
 
-A functor lifts a function of type `A => B` to a function of type `F[A] => F[B]`
-
-### `Function1` functor
+### The unary function functor
 
 ```scala
 class Fn1Functor[A, B](g: A => B) extends Functor[B, ({type λ[α] = A => α})#λ] {
@@ -19,6 +25,8 @@ class Fn1Functor[A, B](g: A => B) extends Functor[B, ({type λ[α] = A => α})#�
 ```
 
 #### Example
+
+The function `fn1FunctorEx` has the form `x => ((x + 1) * 2) - 3`
 
 ```scala
 implicit def fn1Functor[A, B](g: A => B) = new Fn1Functor(g)
@@ -29,9 +37,9 @@ val fn1FunctorEx: Int => Int =
 println("fn1FunctorEx(5) = " + fn1FunctorEx(5)) // ((5 + 1) * 2) - 3 = 9
 ```
 
-The function `fn1FunctorEx` has the form `x => ((x + 1) * 2) - 3`
-
 ## Monad
+
+A monad builds upon a functor by adding a function to "tilt" an inter-category function of type `A => F[B]` to an intra-category function of type `F[A] => F[B]`
 
 ```scala
 trait Monad[A, F[_]] extends Functor[A, F] {
@@ -39,9 +47,7 @@ trait Monad[A, F[_]] extends Functor[A, F] {
 }
 ```
 
-A monad builds upon a functor by adding a function to "tilt" an inter-category function of type `A => F[B]` to an intra-category function of type `F[A] => F[B]`
-
-### `Function1` monad (aka Reader monad)
+### The unary function monad (aka the Reader monad)
 
 ```scala
 class Fn1Monad[A, B](g: A => B) extends Fn1Functor[A, B](g)
@@ -52,6 +58,8 @@ class Fn1Monad[A, B](g: A => B) extends Fn1Functor[A, B](g)
 
 #### Examples
 
+The function `fn1MonadEx1` has the form `x => (x + 1) * x`
+
 ```scala
 implicit def fn1Monad[A, B](g: A => B) = new Fn1Monad(g)
 
@@ -61,7 +69,7 @@ val fn1MonadEx1: Int => Int =
 println("fn1MonadEx1(5) = " + fn1MonadEx1(5)) // (5 + 1) * 5 = 30
 ```
 
-The function `fn1MonadEx1` has the form `x => (x + 1) * x`
+Like `fn1MonadEx1` above, the function `fn1MonadEx2` has the form `x => (x + 1) * x`
 
 ```scala
 implicit def fn1Monad[A, B](g: A => B) = new Fn1Monad(g)
@@ -74,5 +82,3 @@ val fn1MonadEx2: Int => Int =
 
 println("fn1MonadEx2(5) = " + fn1MonadEx2(5)) // (5 + 1 * 5) = 30
 ```
-
-Just like `fn1MonadEx1`, the function `fn1MonadEx2` has the form `x => (x + 1) * x`
