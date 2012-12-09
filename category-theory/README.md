@@ -1,4 +1,4 @@
-# Type Classes, Category Theory and Scala
+# Type Classes, Category Theory, and Scala
 
 _8 December 2012_
 
