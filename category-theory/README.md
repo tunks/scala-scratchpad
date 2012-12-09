@@ -2,7 +2,7 @@
 
 _8 December 2012_
 
-This is a light reference for Scala implementations of some commonly used aspects of category theory.  This document will grow over time as I learn more about the theory and discover new ways to apply it.
+This is a light reference for Scala implementations of some commonly used aspects of category theory, and will grow over time as I encounter useful ways to apply it.
 
 ## Functor
 
