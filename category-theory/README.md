@@ -4,7 +4,7 @@ _8 December 2012_
 
 This is a light reference for Scala implementations of some commonly used aspects of category theory.
 
-This document will grow over time, as I learn more about the theory, and discover new ways to apply it.
+This document will grow over time, as I learn more about the theory and discover new ways to apply it.
 
 ## Functor
 
@@ -24,9 +24,7 @@ class Fn1Functor[A, B](g: A => B) extends Functor[B, ({type λ[α] = A => α})#�
 }
 ```
 
-#### Example
-
-The function `fn1FunctorEx` has the form `x => ((x + 1) * 2) - 3`
+Example: the function `fn1FunctorEx` below has the form `x => ((x + 1) * 2) - 3`
 
 ```scala
 implicit def fn1Functor[A, B](g: A => B) = new Fn1Functor(g)
@@ -56,9 +54,7 @@ class Fn1Monad[A, B](g: A => B) extends Fn1Functor[A, B](g)
 }
 ```
 
-#### Examples
-
-The function `fn1MonadEx1` has the form `x => (x + 1) * x`
+Example: the function `fn1MonadEx1` below has the form `x => (x + 1) * x`
 
 ```scala
 implicit def fn1Monad[A, B](g: A => B) = new Fn1Monad(g)
@@ -69,7 +65,7 @@ val fn1MonadEx1: Int => Int =
 println("fn1MonadEx1(5) = " + fn1MonadEx1(5)) // (5 + 1) * 5 = 30
 ```
 
-Like `fn1MonadEx1` above, the function `fn1MonadEx2` has the form `x => (x + 1) * x`
+Example: like `fn1MonadEx1` above, the function `fn1MonadEx2` below has the form `x => (x + 1) * x`
 
 ```scala
 implicit def fn1Monad[A, B](g: A => B) = new Fn1Monad(g)
