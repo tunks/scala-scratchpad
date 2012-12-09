@@ -32,7 +32,7 @@ implicit def fn1Functor[A, B](g: A => B) = new Fn1Functor(g)
 val fn1FunctorEx: Int => Int =
   { x: Int => x + 1 } map { x: Int => x * 2 } map { x: Int => x - 3 }
 
-println("fn1FunctorEx(5) = " + fn1FunctorEx(5)) // ((5 + 1) * 2) - 3 = 9
+val x = fn1FunctorEx(5)) // x = ((5 + 1) * 2) - 3 = 9
 ```
 
 ## Monad
@@ -62,7 +62,7 @@ implicit def fn1Monad[A, B](g: A => B) = new Fn1Monad(g)
 val fn1MonadEx1: Int => Int =
   { x: Int => x + 1 } flatMap { x: Int => y: Int => x * y }
 
-println("fn1MonadEx1(5) = " + fn1MonadEx1(5)) // (5 + 1) * 5 = 30
+val x = fn1MonadEx1(5)) // x = (5 + 1) * 5 = 30
 ```
 
 Example: like `fn1MonadEx1` above, the function `fn1MonadEx2` below has the form `x => (x + 1) * x`
@@ -76,5 +76,5 @@ val fn1MonadEx2: Int => Int =
     b <- { x: Int => y: Int => x * y } apply a
   } yield b
 
-println("fn1MonadEx2(5) = " + fn1MonadEx2(5)) // (5 + 1 * 5) = 30
+val x = fn1MonadEx2(5)) // x = (5 + 1 * 5) = 30
 ```
