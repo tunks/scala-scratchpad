@@ -32,7 +32,7 @@ implicit def fn1Functor[A, B](g: A => B) = new Fn1Functor(g)
 val fn1FunctorEx: Int => Int =
   { x: Int => x + 1 } map { x: Int => x * 2 } map { x: Int => x - 3 }
 
-val x = fn1FunctorEx(5)) // x = ((5 + 1) * 2) - 3 = 9
+val x = fn1FunctorEx(5) // x = ((5 + 1) * 2) - 3 = 9
 ```
 
 ## Monad
@@ -62,9 +62,9 @@ Example: the function `fn1MonadEx1` below has the form `x => (x + 1) * x`
 implicit def fn1Monad[A, B](g: A => B) = new Fn1Monad(g)
 
 val fn1MonadEx1: Int => Int =
-  { x: Int => x + 1 } flatMap { x: Int => y: Int => x * y }
+  { x: Int => x + 1 } flatMap { x: Int => y: Int => x * (y + 3) }
 
-val x = fn1MonadEx1(5)) // x = (5 + 1) * 5 = 30
+val x = fn1MonadEx1(5) // x = (5 + 1) * (5 + 3) = 48
 ```
 
 Example: like `fn1MonadEx1` above, the function `fn1MonadEx2` below has the form `x => (x + 1) * x`
@@ -78,5 +78,31 @@ val fn1MonadEx2: Int => Int =
     b <- { x: Int => y: Int => x * y } apply a
   } yield b
 
-val x = fn1MonadEx2(5)) // x = (5 + 1 * 5) = 30
+val x = fn1MonadEx2(5) // x = (5 + 1) * (5 + 3) = 48
+```
+
+## Applicative functor
+
+```scala
+trait Applicative[A, F[_]] extends Functor[A, F] {
+  def ap[B](f: F[A => B]): F[B]
+}
+```
+
+### The unary function applicative functor
+
+```scala
+class Fn1Applicative[A, B](g: A => B) extends Fn1Functor[A, B](g)
+                                         with Applicative[B, ({type λ[α] = A => α})#λ] {
+  override def ap[C](f: A => B => C): (A => C) = { a => f(a)(g(a)) } 
+}
+```
+
+Example:
+
+```scala
+implicit def fn1Applicative[A, B](g: A => B) = new Fn1Applicative(g)
+val fn1ApplicativeDemo: Int => Int =
+  { x: Int => x + 1 } ap { x: Int => y: Int => x * (y + 3) }
+val x = fn1ApplicativeDemo(5) // x = 5 * ((5 + 1) + 3) = 45
 ```

@@ -39,6 +39,28 @@ trait Fn1FunctorDemo {
   println("fn1FunctorDemo(5) = " + fn1FunctorDemo(5)) // ((5 + 1) * 2) - 3 = 9
 }
 
+// Applicative Functor
+
+trait Applicative[A, F[_]] extends Functor[A, F] {
+  def ap[B](f: F[A => B]): F[B]
+}
+
+class Fn1Applicative[A, B](g: A => B) extends Fn1Functor[A, B](g)
+                                         with Applicative[B, ({type λ[α] = A => α})#λ] {
+  override def ap[C](f: A => B => C): (A => C) = { a => f(a)(g(a)) } 
+}
+
+object Applicative {
+  implicit def fn1Applicative[A, B](g: A => B) = new Fn1Applicative(g)
+}
+
+trait Fn1ApplicativeDemo {
+  import Applicative.fn1Applicative
+  val fn1ApplicativeDemo: Int => Int =
+    { x: Int => x + 1 } ap { x: Int => y: Int => x * (y + 3) }
+  println("fn1ApplicativeDemo(5) = " + fn1ApplicativeDemo(5))
+}
+
 // Monad
 
 trait Monad[A, F[_]] extends Functor[A, F] {
@@ -58,8 +80,8 @@ object Monad {
 trait Fn1MonadDemo1 {
   import Monad.fn1Monad
   val fn1MonadDemo1: Int => Int =
-    { x: Int => x + 1 } flatMap { x: Int => y: Int => x * y }
-  println("fn1MonadDemo1(5) = " + fn1MonadDemo1(5)) // (5 + 1) * 5 = 30
+    { x: Int => x + 1 } flatMap { x: Int => y: Int => x * (y + 3) }
+  println("fn1MonadDemo1(5) = " + fn1MonadDemo1(5)) // (5 + 1) * (5 + 3) = 48
 }
 
 trait Fn1MonadDemo2 {
@@ -67,14 +89,15 @@ trait Fn1MonadDemo2 {
   val fn1MonadDemo2: Int => Int =
     for {
       a <- { x: Int => x + 1 }
-      b <- { x: Int => y: Int => x * y } apply a
+      b <- { x: Int => y: Int => x * (y + 3) } apply a
     } yield b
-  println("fn1MonadDemo2(5) = " + fn1MonadDemo2(5)) // (5 + 1 * 5) = 30
+  println("fn1MonadDemo2(5) = " + fn1MonadDemo2(5)) // (5 + 1) * (5 + 3) = 48
 }
 
 // Demo
 
 object Demo extends App
                with Fn1FunctorDemo
+               with Fn1ApplicativeDemo
                with Fn1MonadDemo1
                with Fn1MonadDemo2
