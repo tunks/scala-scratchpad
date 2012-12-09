@@ -16,6 +16,8 @@ trait Functor[A, F[_]] {
 
 ### The unary function functor
 
+The unary function functor is used to compose a bunch of unary functions together, like Scala's [`andThen`](http://www.scala-lang.org/api/current/scala/Function1.html) function.
+
 ```scala
 class Fn1Functor[A, B](g: A => B) extends Functor[B, ({type λ[α] = A => α})#λ] {
   override def map[C](f: B => C): (A => C) = { a => f(g(a)) }
@@ -44,6 +46,8 @@ trait Monad[A, F[_]] extends Functor[A, F] {
 ```
 
 ### The unary function monad (aka the Reader monad)
+
+The unary function monad is used to pass a single external value into a bunch of functions which depend on it.  This is also known as the Reader monad, and is a way to implement [dependency injection](https://github.com/Versal/jellyfish).
 
 ```scala
 class Fn1Monad[A, B](g: A => B) extends Fn1Functor[A, B](g)
