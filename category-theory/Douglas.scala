@@ -63,11 +63,11 @@ trait Fn1ApplicativeDemo {
 
 // Monad
 
-trait Monad[A, F[_]] extends Functor[A, F] {
+trait Monad[A, F[_]] extends Applicative[A, F] {
   def flatMap[B](f: A => F[B]): F[B]
 }
 
-class Fn1Monad[A, B](g: A => B) extends Fn1Functor[A, B](g)
+class Fn1Monad[A, B](g: A => B) extends Fn1Applicative[A, B](g)
                                    with Monad[B, ({type λ[α] = A => α})#λ] {
   override def flatMap[C](f: B => (A => C)): (A => C) = { a => f(g(a))(a) }
 }

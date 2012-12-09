@@ -35,12 +35,40 @@ val fn1FunctorEx: Int => Int =
 val x = fn1FunctorEx(5) // x = ((5 + 1) * 2) - 3 = 9
 ```
 
-## Monad
+## Applicative
 
-A monad builds upon a functor by adding a function to "tilt" an inter-category function of type `A => F[B]` to an intra-category function of type `F[A] => F[B]`
+An applicative builds upon a functor with a way to apply an already-lifted function of type `F[A => B]` as a function of type `F[A] => F[B]`
 
 ```scala
-trait Monad[A, F[_]] extends Functor[A, F] {
+trait Applicative[A, F[_]] extends Functor[A, F] {
+  def ap[B](f: F[A => B]): F[B]
+}
+```
+
+### The unary function applicative functor
+
+```scala
+class Fn1Applicative[A, B](g: A => B) extends Fn1Functor[A, B](g)
+                                         with Applicative[B, ({type λ[α] = A => α})#λ] {
+  override def ap[C](f: A => B => C): (A => C) = { a => f(a)(g(a)) } 
+}
+```
+
+Example:
+
+```scala
+implicit def fn1Applicative[A, B](g: A => B) = new Fn1Applicative(g)
+val fn1ApplicativeDemo: Int => Int =
+  { x: Int => x + 1 } ap { x: Int => y: Int => x * (y + 3) }
+val x = fn1ApplicativeDemo(5) // x = 5 * ((5 + 1) + 3) = 45
+```
+
+## Monad
+
+A monad builds upon an applicative by adding a way to "tilt" an inter-category function of type `A => F[B]` and apply it as a function of type `F[A] => F[B]`
+
+```scala
+trait Monad[A, F[_]] extends Applicative[A, F] {
   def flatMap[B](f: A => F[B]): F[B]
 }
 ```
@@ -50,7 +78,7 @@ trait Monad[A, F[_]] extends Functor[A, F] {
 The unary function monad is used to pass a single external value into a bunch of functions which depend on it.  This is also known as the Reader monad, and is a way to implement [dependency injection](https://github.com/Versal/jellyfish).
 
 ```scala
-class Fn1Monad[A, B](g: A => B) extends Fn1Functor[A, B](g)
+class Fn1Monad[A, B](g: A => B) extends Fn1Applicative[A, B](g)
                                    with Monad[B, ({type λ[α] = A => α})#λ] {
   override def flatMap[C](f: B => (A => C)): (A => C) = { a => f(g(a))(a) }
 }
@@ -79,30 +107,4 @@ val fn1MonadEx2: Int => Int =
   } yield b
 
 val x = fn1MonadEx2(5) // x = (5 + 1) * (5 + 3) = 48
-```
-
-## Applicative functor
-
-```scala
-trait Applicative[A, F[_]] extends Functor[A, F] {
-  def ap[B](f: F[A => B]): F[B]
-}
-```
-
-### The unary function applicative functor
-
-```scala
-class Fn1Applicative[A, B](g: A => B) extends Fn1Functor[A, B](g)
-                                         with Applicative[B, ({type λ[α] = A => α})#λ] {
-  override def ap[C](f: A => B => C): (A => C) = { a => f(a)(g(a)) } 
-}
-```
-
-Example:
-
-```scala
-implicit def fn1Applicative[A, B](g: A => B) = new Fn1Applicative(g)
-val fn1ApplicativeDemo: Int => Int =
-  { x: Int => x + 1 } ap { x: Int => y: Int => x * (y + 3) }
-val x = fn1ApplicativeDemo(5) // x = 5 * ((5 + 1) + 3) = 45
 ```
