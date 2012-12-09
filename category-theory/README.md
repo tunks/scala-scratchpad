@@ -8,6 +8,8 @@ trait Functor[A, F[_]] {
 }
 ```
 
+A functor lifts a function of type `A => B` to a function of type `F[A] => F[B]`
+
 ### `Function1` functor
 
 ```scala
@@ -27,6 +29,8 @@ val fn1FunctorEx: Int => Int =
 println("fn1FunctorEx(5) = " + fn1FunctorEx(5)) // ((5 + 1) * 2) - 3 = 9
 ```
 
+The function `fn1FunctorEx` has the form `x => ((x + 1) * 2) - 3`
+
 ## Monad
 
 ```scala
@@ -34,6 +38,8 @@ trait Monad[A, F[_]] extends Functor[A, F] {
   def flatMap[B](f: A => F[B]): F[B]
 }
 ```
+
+A monad builds upon a functor by adding a function to "tilt" an inter-category function of type `A => F[B]` to an intra-category function of type `F[A] => F[B]`
 
 ### `Function1` monad (aka Reader monad)
 
@@ -55,6 +61,8 @@ val fn1MonadEx1: Int => Int =
 println("fn1MonadEx1(5) = " + fn1MonadEx1(5)) // (5 + 1) * 5 = 30
 ```
 
+The function `fn1MonadEx1` has the form `x => (x + 1) * x`
+
 ```scala
 implicit def fn1Monad[A, B](g: A => B) = new Fn1Monad(g)
 
@@ -65,3 +73,6 @@ val fn1MonadEx2: Int => Int =
   } yield b
 
 println("fn1MonadEx2(5) = " + fn1MonadEx2(5)) // (5 + 1 * 5) = 30
+```
+
+Just like `fn1MonadEx1`, the function `fn1MonadEx2` has the form `x => (x + 1) * x`
