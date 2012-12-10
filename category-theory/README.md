@@ -163,6 +163,8 @@ class StdoutLog extends Log {
   }
 }
 
+implicit def stateMonad[S, A](g: S => (A, S)) = new StateMonad(g)
+
 val f1: Log => (Int, Log) = log => (1, log.append("info", "f1"))
 val f2: Int => Log => (Int, Log) = x => log => (x + 1, log.append("info", "f2"))
 
