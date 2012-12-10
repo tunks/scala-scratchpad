@@ -72,9 +72,29 @@ class Fn1Monad[A, B](g: A => B) extends Fn1Applicative[A, B](g)
   override def flatMap[C](f: B => (A => C)): (A => C) = { a => f(g(a))(a) }
 }
 
+class StateMonad[S, A](g: S => (A, S)) extends Monad[A, ({type λ[α] = S => (α, S)})#λ] {
+  override def map[B](f: A => B): (S => (B, S)) =
+    { state =>
+      val (a, state1) = g(state)
+      (f(a), state1)
+    }
+  def ap[B](f: S => (A => B, S)): (S => (B, S)) =
+    { state =>
+      val (a, state1) = g(state)
+      val (atob, state2) = f(state1)
+      (atob(a), state2)
+    }
+  override def flatMap[B](f: A => (S => (B, S))): (S => (B, S)) =
+    { state =>
+      val (a, state1) = g(state)
+      f(a)(state1)
+    }
+}
+
 object Monad {
   type Reader[A, B] = Fn1Monad[A, B]
   implicit def fn1Monad[A, B](g: A => B) = new Fn1Monad(g)
+  implicit def stateMonad[S, A](g: S => (A, S)) = new StateMonad(g)
 }
 
 trait Fn1MonadDemo1 {
@@ -94,6 +114,21 @@ trait Fn1MonadDemo2 {
   println("fn1MonadDemo2(5) = " + fn1MonadDemo2(5)) // (5 + 1) * (5 + 3) = 48
 }
 
+trait StateMonadDemo {
+  import Monad.stateMonad
+
+  val f1: List[String] => (Int, List[String]) = log => (1, "f1" :: log)
+  val f2: Int => List[String] => (Int, List[String]) = x => log => (x + 1, "f2" :: log)
+
+  val f3: List[String] => (Int, List[String]) = for {
+    a <- f1
+    b <- f2(a)
+  } yield b
+
+  val (x, log) = f3(Nil)
+  println("StateMonadDemo: (x, log) = (" + x + ", " + log + ")")
+}
+
 // Demo
 
 object Demo extends App
@@ -101,3 +136,4 @@ object Demo extends App
                with Fn1ApplicativeDemo
                with Fn1MonadDemo1
                with Fn1MonadDemo2
+               with StateMonadDemo
