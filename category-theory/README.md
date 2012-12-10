@@ -108,3 +108,44 @@ val fn1MonadEx2: Int => Int =
 
 val x = fn1MonadEx2(5) // x = (5 + 1) * (5 + 3) = 48
 ```
+
+### The state monad
+
+The state monad is used to pass a modifiable context from one function invocation to the next.
+
+```scala
+class StateMonad[S, A](g: S => (A, S)) extends Monad[A, ({type λ[α] = S => (α, S)})#λ] {
+  override def map[B](f: A => B): (S => (B, S)) =
+    { state =>
+      val (a, state1) = g(state)
+      (f(a), state1)
+    }
+  def ap[B](f: S => (A => B, S)): (S => (B, S)) =
+    { state =>
+      val (a, state1) = g(state)
+      val (atob, state2) = f(state1)
+      (atob(a), state2)
+    }
+  override def flatMap[B](f: A => (S => (B, S))): (S => (B, S)) =
+    { state =>
+      val (a, state1) = g(state)
+      f(a)(state1)
+    }
+}
+```
+
+Example: logging
+
+```scala
+implicit def stateMonad[S, A](g: S => (A, S)) = new StateMonad(g)
+
+val f1: List[String] => (Int, List[String]) = log => (1, "f1" :: log)
+val f2: Int => List[String] => (Int, List[String]) = x => log => (x + 1, "f2" :: log)
+
+val f3: List[String] => (Int, List[String]) = for {
+  a <- f1
+  b <- f2(a)
+} yield b
+
+val (x, log) = f3(Nil) // (x, log) = (2, List("f2", "f1"))
+```
