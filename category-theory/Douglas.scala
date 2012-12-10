@@ -1,20 +1,20 @@
 // Semigroup
 
-trait Semigroup[A] {
-  def append(a: A): A
+trait Semigroup[A, F[_]] {
+  def append(a: A): F[A]
 }
 
-class IntSemigroup(x: Int) extends Semigroup[Int] {
-  override def append(a: Int) = x + a
+class Tuple2ListSemigroup[A, B](l: List[(A, B)]) extends Semigroup[(A, B), List] {
+  override def append(ab: (A, B)) = ab :: l
 }
 
 object Semigroup {
-  implicit def intSemigroup(x: Int) = new IntSemigroup(x)
+  implicit def tuple2ListSemigroup[A, B](l: List[(A, B)]) = new Tuple2ListSemigroup(l)
 }
 
 // Monoid
 
-trait Monoid[A] extends Semigroup[A] {
+trait Monoid[A, F[_]] extends Semigroup[A, F] {
   def empty: A
 }
 
