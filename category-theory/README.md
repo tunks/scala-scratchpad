@@ -20,7 +20,7 @@ The unary function functor is used to compose a bunch of unary functions togethe
 
 ```scala
 class Fn1Functor[A, B](g: A => B) extends Functor[B, ({type λ[α] = A => α})#λ] {
-  override def map[C](f: B => C): (A => C) = { a => f(g(a)) }
+  override def map[C](f: B => C): (A => C) = a => f(g(a))
 }
 ```
 
@@ -50,7 +50,7 @@ trait Applicative[A, F[_]] extends Functor[A, F] {
 ```scala
 class Fn1Applicative[A, B](g: A => B) extends Fn1Functor[A, B](g)
                                          with Applicative[B, ({type λ[α] = A => α})#λ] {
-  override def ap[C](f: A => B => C): (A => C) = { a => f(a)(g(a)) } 
+  override def ap[C](f: A => B => C): (A => C) = a => f(a)(g(a))
 }
 ```
 
@@ -80,7 +80,7 @@ The unary function monad is used to pass a single external value into a bunch of
 ```scala
 class Fn1Monad[A, B](g: A => B) extends Fn1Applicative[A, B](g)
                                    with Monad[B, ({type λ[α] = A => α})#λ] {
-  override def flatMap[C](f: B => (A => C)): (A => C) = { a => f(g(a))(a) }
+  override def flatMap[C](f: B => (A => C)): (A => C) = a => f(g(a))(a)
 }
 ```
 

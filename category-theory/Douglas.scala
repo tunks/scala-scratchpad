@@ -29,7 +29,7 @@ object Functor {
 }
 
 class Fn1Functor[A, B](g: A => B) extends Functor[B, ({type λ[α] = A => α})#λ] {
-  override def map[C](f: B => C): (A => C) = { a => f(g(a)) }
+  override def map[C](f: B => C): (A => C) = a => f(g(a))
 }
 
 trait Fn1FunctorDemo {
@@ -47,7 +47,7 @@ trait Applicative[A, F[_]] extends Functor[A, F] {
 
 class Fn1Applicative[A, B](g: A => B) extends Fn1Functor[A, B](g)
                                          with Applicative[B, ({type λ[α] = A => α})#λ] {
-  override def ap[C](f: A => B => C): (A => C) = { a => f(a)(g(a)) } 
+  override def ap[C](f: A => B => C): (A => C) = a => f(a)(g(a))
 }
 
 object Applicative {
@@ -69,7 +69,7 @@ trait Monad[A, F[_]] extends Applicative[A, F] {
 
 class Fn1Monad[A, B](g: A => B) extends Fn1Applicative[A, B](g)
                                    with Monad[B, ({type λ[α] = A => α})#λ] {
-  override def flatMap[C](f: B => (A => C)): (A => C) = { a => f(g(a))(a) }
+  override def flatMap[C](f: B => (A => C)): (A => C) = a => f(g(a))(a)
 }
 
 class StateMonad[S, A](g: S => (A, S)) extends Monad[A, ({type λ[α] = S => (α, S)})#λ] {
