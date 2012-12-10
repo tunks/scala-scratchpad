@@ -152,7 +152,7 @@ val (x, log) = f3(Nil) // (x, log) = (2, List("f2", "f1"))
 
 Example: logging to a mutable log
 
-We can cheat a little bit and implementation a log that does something other than simply collecting log messages in memory.
+We can cheat a little bit and implement a log that does something other than simply collecting log messages in memory.
 
 ```scala
 trait Log { def append(level: String, message: String): Log }
