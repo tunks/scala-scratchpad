@@ -149,3 +149,25 @@ val f3: List[String] => (Int, List[String]) = for {
 
 val (x, log) = f3(Nil) // (x, log) = (2, List("f2", "f1"))
 ```
+
+We can cheat a little bit and write a mutable log implementation which does something other than simply collecting log messages in memory.
+
+```scala
+trait Log { def append(level: String, message: String): Log }
+class StdoutLog extends Log {
+  def append(level: String, message: String) = {
+    println("[" + level + "] " + message)
+    this
+  }
+}
+
+val f1: Log => (Int, Log) = log => (1, log.append("info", "f1"))
+val f2: Int => Log => (Int, Log) = x => log => (x + 1, log.append("info", "f2"))
+
+val f3: Log => (Int, Log) = for {
+  a <- f1
+  b <- f2(a)
+} yield b
+
+val (x, log) = f3(new StdoutLog) // x = 2, log has printed two `info` messages to stdout
+```

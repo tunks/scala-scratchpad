@@ -114,7 +114,7 @@ trait Fn1MonadDemo2 {
   println("fn1MonadDemo2(5) = " + fn1MonadDemo2(5)) // (5 + 1) * (5 + 3) = 48
 }
 
-trait StateMonadDemo {
+trait StateMonadDemo1 {
   import Monad.stateMonad
 
   val f1: List[String] => (Int, List[String]) = log => (1, "f1" :: log)
@@ -126,7 +126,30 @@ trait StateMonadDemo {
   } yield b
 
   val (x, log) = f3(Nil)
-  println("StateMonadDemo: (x, log) = (" + x + ", " + log + ")")
+  println("StateMonadDemo1: (x, log) = (" + x + ", " + log + ")")
+}
+
+trait StateMonadDemo2 {
+  import Monad.stateMonad
+
+  trait Log { def append(level: String, message: String): Log }
+  class StdoutLog extends Log {
+    def append(level: String, message: String) = {
+      println("[" + level + "] " + message)
+      this
+    }
+  }
+
+  val f1: Log => (Int, Log) = log => (1, log.append("info", "f1"))
+  val f2: Int => Log => (Int, Log) = x => log => (x + 1, log.append("info", "f2"))
+
+  val f3: Log => (Int, Log) = for {
+    a <- f1
+    b <- f2(a)
+  } yield b
+
+  val (x, log) = f3(new StdoutLog)
+  println("StateMonadDemo1: x = " + x)
 }
 
 // Demo
@@ -136,4 +159,4 @@ object Demo extends App
                with Fn1ApplicativeDemo
                with Fn1MonadDemo1
                with Fn1MonadDemo2
-               with StateMonadDemo
+               with StateMonadDemo2
