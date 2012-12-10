@@ -134,7 +134,7 @@ class StateMonad[S, A](g: S => (A, S)) extends Monad[A, ({type λ[α] = S => (α
 }
 ```
 
-Example: logging
+Example: logging to an in-memory list of messages
 
 ```scala
 implicit def stateMonad[S, A](g: S => (A, S)) = new StateMonad(g)
@@ -150,7 +150,9 @@ val f3: List[String] => (Int, List[String]) = for {
 val (x, log) = f3(Nil) // (x, log) = (2, List("f2", "f1"))
 ```
 
-We can cheat a little bit and write a mutable log implementation which does something other than simply collecting log messages in memory.
+Example: logging to a mutable log
+
+We can cheat a little bit and implementation a log that does something other than simply collecting log messages in memory.
 
 ```scala
 trait Log { def append(level: String, message: String): Log }
