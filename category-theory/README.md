@@ -80,6 +80,50 @@ val add3: Int => Int => Int => Int = x => y => z => x + y + z
 val optionApplicativeDemo = 1 ap (2 ap (3 map add3)) // Some(6)
 ```
 
+### The validity applicative functor
+
+```scala
+trait Semigroup[A] {
+  def append(a: A): A
+}
+
+class ListSemigroup[A](as: List[A]) extends Semigroup[List[A]] {
+  override def append(as2: List[A]) = as ++ as2
+}
+
+sealed trait Validity[A, B]
+case class Valid[A, B](a: A)(implicit bs: B => Semigroup[B])
+   extends Validity[A, B] with Applicative[A, ({type λ[α] = Validity[α, B]})#λ] {
+  override def map[C](f: A => C): Validity[C, B] = Valid[C, B](f(a))
+  override def ap[C](f: Validity[A => C, B]): Validity[C, B] = f match {
+    case Valid(ac)  => Valid(ac(a))
+    case Invalid(b) => Invalid(b)
+  }
+}
+case class Invalid[A, B](b: B)(implicit bs: B => Semigroup[B])
+   extends Validity[A, B] with Applicative[A, ({type λ[α] = Validity[α, B]})#λ] {
+  override def map[C](f: A => C): Validity[C, B] = Invalid(b)
+  override def ap[C](f: Validity[A => C, B]): Validity[C, B] = f match {
+    case Valid(ac)   => Invalid(b)
+    case Invalid(b2) => Invalid(bs(b2) append b)
+  }
+}
+```
+
+Example:
+
+```scala
+implicit def listSemigroup[A](as: List[A]) = new ListSemigroup(as)
+val add4: Int => Int => Int => Int => Int = w => x => y => z => w + x + y + z
+
+def valid(x: Int) = Valid[Int, List[String]](x)
+def invalid(b: String) = Invalid[Int, List[String]](List(b))
+
+val validApplicativeDemo = valid(1) ap (valid(2) ap (valid(3) ap (valid(4) map add4))) // Valid(10)
+
+val invalidApplicativeDemo = valid(1) ap (invalid("nooo") ap (valid(3) ap (invalid("fourve") map add4))) // Invalid(List("fourve", "nooo"))
+```
+
 ## Monad
 
 A monad builds upon an applicative by adding a way to "tilt" an inter-category function of type `A => F[B]` and apply it as a function of type `F[A] => F[B]`
