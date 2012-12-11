@@ -82,6 +82,8 @@ val optionApplicativeDemo = 1 ap (2 ap (3 map add3)) // Some(6)
 
 ### The validity applicative functor
 
+The validity applicative functor can be used to pass multiple potentially invalid arguments to a function.  This is frequently useful when arguments must first be parsed at runtime, so there can be no guarantee that their values are correct.
+
 ```scala
 trait Semigroup[A] {
   def append(a: A): A
@@ -91,17 +93,13 @@ class ListSemigroup[A](as: List[A]) extends Semigroup[List[A]] {
   override def append(as2: List[A]) = as ++ as2
 }
 
-sealed trait Validity[A, B]
-case class Valid[A, B](a: A)(implicit bs: B => Semigroup[B])
-   extends Validity[A, B] with Applicative[A, ({type λ[α] = Validity[α, B]})#λ] {
+sealed trait Validity[A, B] extends Applicative[A, ({type λ[α] = Validity[α, B]})#λ]case class Valid[A, B](a: A)(implicit bs: B => Semigroup[B]) extends Validity[A, B] {
   override def map[C](f: A => C): Validity[C, B] = Valid[C, B](f(a))
   override def ap[C](f: Validity[A => C, B]): Validity[C, B] = f match {
     case Valid(ac)  => Valid(ac(a))
     case Invalid(b) => Invalid(b)
   }
-}
-case class Invalid[A, B](b: B)(implicit bs: B => Semigroup[B])
-   extends Validity[A, B] with Applicative[A, ({type λ[α] = Validity[α, B]})#λ] {
+}case class Invalid[A, B](b: B)(implicit bs: B => Semigroup[B]) extends Validity[A, B] {
   override def map[C](f: A => C): Validity[C, B] = Invalid(b)
   override def ap[C](f: Validity[A => C, B]): Validity[C, B] = f match {
     case Valid(ac)   => Invalid(b)
@@ -110,18 +108,23 @@ case class Invalid[A, B](b: B)(implicit bs: B => Semigroup[B])
 }
 ```
 
-Example:
+Example: the function `add4` takes four integers and sums them
 
 ```scala
 implicit def listSemigroup[A](as: List[A]) = new ListSemigroup(as)
 val add4: Int => Int => Int => Int => Int = w => x => y => z => w + x + y + z
 
-def valid(x: Int) = Valid[Int, List[String]](x)
-def invalid(b: String) = Invalid[Int, List[String]](List(b))
+def parse(x: String): Validity[Int, List[String]] = try {
+  Valid[Int, List[String]](x.toInt)
+} catch {
+  case _ => Invalid[Int, List[String]](List("'" + x + "' is not an integer"))
+}
 
-val validApplicativeDemo = valid(1) ap (valid(2) ap (valid(3) ap (valid(4) map add4))) // Valid(10)
+val validApplicativeDemo = parse("1") ap (parse("2") ap (parse("3") ap (parse("4") map add4)))
+                      // = Valid(10)
 
-val invalidApplicativeDemo = valid(1) ap (invalid("nooo") ap (valid(3) ap (invalid("fourve") map add4))) // Invalid(List("fourve", "nooo"))
+val invalidApplicativeDemo = parse("1") ap (parse("nooo") ap (parse("3") ap (parse("fourve") map add4)))
+                        // = Invalid(List("'fourve' is not an integer", "'nooo' is not an integer"))
 ```
 
 ## Monad
