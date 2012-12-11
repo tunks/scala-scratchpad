@@ -63,6 +63,23 @@ val fn1ApplicativeDemo: Int => Int =
 val x = fn1ApplicativeDemo(5) // x = 5 * ((5 + 1) + 3) = 45
 ```
 
+### The optional value applicative functor
+
+```scala
+class OptionApplicative[A](a: A) extends Applicative[A, Option] {
+  override def map[B](f: A => B): Option[B] = Option(f(a))
+  override def ap[B](f: Option[A => B]): Option[B] = f.map(_(a))
+}
+```
+
+Example:
+
+```scala
+implicit def optionApplicative[A](a: A) = new OptionApplicative(a)
+val add3: Int => Int => Int => Int = x => y => z => x + y + z
+val optionApplicativeDemo = 1 ap (2 ap (3 map add3)) // Some(6)
+```
+
 ## Monad
 
 A monad builds upon an applicative by adding a way to "tilt" an inter-category function of type `A => F[B]` and apply it as a function of type `F[A] => F[B]`

@@ -50,8 +50,14 @@ class Fn1Applicative[A, B](g: A => B) extends Fn1Functor[A, B](g)
   override def ap[C](f: A => B => C): (A => C) = a => f(a)(g(a))
 }
 
+class OptionApplicative[A](a: A) extends Applicative[A, Option] {
+  override def map[B](f: A => B): Option[B] = Option(f(a))
+  override def ap[B](f: Option[A => B]): Option[B] = f.map(_(a))
+}
+
 object Applicative {
   implicit def fn1Applicative[A, B](g: A => B) = new Fn1Applicative(g)
+  implicit def optionApplicative[A](a: A) = new OptionApplicative(a)
 }
 
 trait Fn1ApplicativeDemo {
@@ -59,6 +65,13 @@ trait Fn1ApplicativeDemo {
   val fn1ApplicativeDemo: Int => Int =
     { x: Int => x + 1 } ap { x: Int => y: Int => x * (y + 3) }
   println("fn1ApplicativeDemo(5) = " + fn1ApplicativeDemo(5))
+}
+
+trait OptionApplicativeDemo {
+  import Applicative.optionApplicative
+  val add3: Int => Int => Int => Int = x => y => z => x + y + z
+  val optionApplicativeDemo = 1 ap (2 ap (3 map add3))
+  println("optionApplicativeDemo = " + optionApplicativeDemo)
 }
 
 // Monad
@@ -157,6 +170,7 @@ trait StateMonadDemo2 {
 object Demo extends App
                with Fn1FunctorDemo
                with Fn1ApplicativeDemo
+               with OptionApplicativeDemo
                with Fn1MonadDemo1
                with Fn1MonadDemo2
                with StateMonadDemo2
