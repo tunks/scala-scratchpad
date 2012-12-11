@@ -80,8 +80,13 @@ trait Fn1ApplicativeDemo {
 trait OptionApplicativeDemo {
   import Applicative.optionApplicative
   val add3: Int => Int => Int => Int = x => y => z => x + y + z
-  val optionApplicativeDemo = 1 ap (2 ap (3 map add3))
-  println("optionApplicativeDemo = " + optionApplicativeDemo)
+
+  val optionApplicativeDemo1 = 1 ap (2 ap (3 map add3))
+  println("optionApplicativeDemo1 = " + optionApplicativeDemo1)
+
+  val nope: Int = null.asInstanceOf[Int]
+  val optionApplicativeDemo2 = 1 ap (nope ap (3 map add3))
+  println("optionApplicativeDemo2 = " + optionApplicativeDemo2)
 }
 
 trait ValidityApplicativeDemo {

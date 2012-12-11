@@ -65,6 +65,8 @@ val x = fn1ApplicativeDemo(5) // x = 5 * ((5 + 1) + 3) = 45
 
 ### The optional value applicative functor
 
+The optional value applicative functor can be used to pass potentially unknown arguments to a function.
+
 ```scala
 class OptionApplicative[A](a: A) extends Applicative[A, Option] {
   override def map[B](f: A => B): Option[B] = Option(f(a))
@@ -72,17 +74,21 @@ class OptionApplicative[A](a: A) extends Applicative[A, Option] {
 }
 ```
 
-Example:
+Example: the function `add3` takes three integers that might be null and sums them
 
 ```scala
 implicit def optionApplicative[A](a: A) = new OptionApplicative(a)
 val add3: Int => Int => Int => Int = x => y => z => x + y + z
-val optionApplicativeDemo = 1 ap (2 ap (3 map add3)) // Some(6)
+
+val optionApplicativeDemo1 = 1 ap (2 ap (3 map add3)) // Some(6)
+
+val nope: Int = null.asInstanceOf[Int]
+val optionApplicativeDemo2 = 1 ap (nope ap (3 map add3)) // Some(4)
 ```
 
 ### The validity applicative functor
 
-The validity applicative functor can be used to pass multiple potentially invalid arguments to a function.  This is frequently useful when arguments must first be parsed at runtime, so there can be no guarantee that their values are correct.
+The validity applicative functor can be used to pass potentially invalid arguments to a function.  This is useful when arguments must first be parsed.
 
 ```scala
 trait Semigroup[A] {
@@ -108,7 +114,7 @@ sealed trait Validity[A, B] extends Applicative[A, ({type λ[α] = Validity[α, 
 }
 ```
 
-Example: the function `add4` takes four integers and sums them
+Example: the function `add4` takes four integers that have been parsed from strings and sums them
 
 ```scala
 implicit def listSemigroup[A](as: List[A]) = new ListSemigroup(as)
@@ -139,7 +145,7 @@ trait Monad[A, F[_]] extends Applicative[A, F] {
 
 ### The unary function monad (aka the Reader monad)
 
-The unary function monad is used to pass a single external value into a bunch of functions which depend on it.  This is also known as the Reader monad, and is a way to implement [dependency injection](https://github.com/Versal/jellyfish).
+The unary function monad is used to pass a single external value into a bunch of functions that depend on it.  This is also known as the Reader monad, and is a way to implement [dependency injection](https://github.com/Versal/jellyfish).
 
 ```scala
 class Fn1Monad[A, B](g: A => B) extends Fn1Applicative[A, B](g)
