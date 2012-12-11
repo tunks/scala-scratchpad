@@ -85,8 +85,12 @@ trait OptionApplicativeDemo {
   println("optionApplicativeDemo1 = " + optionApplicativeDemo1)
 
   val nope: Int = null.asInstanceOf[Int]
+
   val optionApplicativeDemo2 = 1 ap (nope ap (3 map add3))
   println("optionApplicativeDemo2 = " + optionApplicativeDemo2)
+
+  val optionApplicativeDemo3 = nope ap (nope ap (nope map add3))
+  println("optionApplicativeDemo3 = " + optionApplicativeDemo3)
 }
 
 trait ValidityApplicativeDemo {

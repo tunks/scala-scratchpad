@@ -74,7 +74,7 @@ class OptionApplicative[A](a: A) extends Applicative[A, Option] {
 }
 ```
 
-Example: the function `add3` takes three integers that might be null and sums them
+Example: the function `add3` takes three integers that might be null, and sums them
 
 ```scala
 implicit def optionApplicative[A](a: A) = new OptionApplicative(a)
@@ -114,7 +114,7 @@ sealed trait Validity[A, B] extends Applicative[A, ({type λ[α] = Validity[α, 
 }
 ```
 
-Example: the function `add4` takes four integers that have been parsed from strings and sums them
+Example: the function `add4` takes four integers that have been parsed from strings, and sums them
 
 ```scala
 implicit def listSemigroup[A](as: List[A]) = new ListSemigroup(as)
