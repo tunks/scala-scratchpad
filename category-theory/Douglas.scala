@@ -1,21 +1,15 @@
 // Semigroup
 
-trait Semigroup[A, F[_]] {
-  def append(a: A): F[A]
+trait Semigroup[A] {
+  def append(a: A): A
 }
 
-class Tuple2ListSemigroup[A, B](l: List[(A, B)]) extends Semigroup[(A, B), List] {
-  override def append(ab: (A, B)) = ab :: l
+class ListSemigroup[A](as: List[A]) extends Semigroup[List[A]] {
+  override def append(as2: List[A]) = as ++ as2
 }
 
 object Semigroup {
-  implicit def tuple2ListSemigroup[A, B](l: List[(A, B)]) = new Tuple2ListSemigroup(l)
-}
-
-// Monoid
-
-trait Monoid[A, F[_]] extends Semigroup[A, F] {
-  def empty: A
+  implicit def listSemigroup[A](as: List[A]) = new ListSemigroup(as)
 }
 
 // Functor
@@ -55,6 +49,24 @@ class OptionApplicative[A](a: A) extends Applicative[A, Option] {
   override def ap[B](f: Option[A => B]): Option[B] = f.map(_(a))
 }
 
+sealed trait Validity[A, B]
+case class Valid[A, B](a: A)(implicit bs: B => Semigroup[B])
+   extends Validity[A, B] with Applicative[A, ({type λ[α] = Validity[α, B]})#λ] {
+  override def map[C](f: A => C): Validity[C, B] = Valid[C, B](f(a))
+  override def ap[C](f: Validity[A => C, B]): Validity[C, B] = f match {
+    case Valid(ac)  => Valid(ac(a))
+    case Invalid(b) => Invalid(b)
+  }
+}
+case class Invalid[A, B](b: B)(implicit bs: B => Semigroup[B])
+   extends Validity[A, B] with Applicative[A, ({type λ[α] = Validity[α, B]})#λ] {
+  override def map[C](f: A => C): Validity[C, B] = Invalid(b)
+  override def ap[C](f: Validity[A => C, B]): Validity[C, B] = f match {
+    case Valid(ac)   => Invalid(b)
+    case Invalid(b2) => Invalid(bs(b2) append b)
+  }
+}
+
 object Applicative {
   implicit def fn1Applicative[A, B](g: A => B) = new Fn1Applicative(g)
   implicit def optionApplicative[A](a: A) = new OptionApplicative(a)
@@ -72,6 +84,20 @@ trait OptionApplicativeDemo {
   val add3: Int => Int => Int => Int = x => y => z => x + y + z
   val optionApplicativeDemo = 1 ap (2 ap (3 map add3))
   println("optionApplicativeDemo = " + optionApplicativeDemo)
+}
+
+trait ValidityApplicativeDemo {
+  import Semigroup.listSemigroup
+  val add4: Int => Int => Int => Int => Int = w => x => y => z => w + x + y + z
+
+  def valid(x: Int) = Valid[Int, List[String]](x)
+  def invalid(b: String) = Invalid[Int, List[String]](List(b))
+
+  val validApplicativeDemo = valid(1) ap (valid(2) ap (valid(3) ap (valid(4) map add4)))
+  println("validApplicativeDemo = " + validApplicativeDemo)
+
+  val invalidApplicativeDemo = valid(1) ap (invalid("nooo") ap (valid(3) ap (invalid("fourve") map add4)))
+  println("invalidApplicativeDemo = " + invalidApplicativeDemo)
 }
 
 // Monad
@@ -171,6 +197,7 @@ object Demo extends App
                with Fn1FunctorDemo
                with Fn1ApplicativeDemo
                with OptionApplicativeDemo
+               with ValidityApplicativeDemo
                with Fn1MonadDemo1
                with Fn1MonadDemo2
                with StateMonadDemo2
