@@ -20,13 +20,13 @@ trait Arrow[A[_,_]] {
 A basic `Arrow` of type `Function1` would then be:
 
 ```scala
-class InfixFunction1Arrow[B,C](f: B => C) {
-  def arr = f
-  def >>>[D](g: C => D) = (b: B) => g(f(b))
-  def first[D](bd: (B,D)) = (f(bd._1), bd._2)
-  def second[D](db: (D,B)) = first(db.swap).swap
-  def ***[D,E](g: D => E) = (bd: (B,D)) => (f(bd._1), g(bd._2))
-  def &&&[D](g: B => D) = (b: B) => ***(g)((b,b))
+class Fn1Arrow extends Arrow[Function1] {
+  override def arr[B,C](f: B => C): B => C = f
+  override def >>>[B,C,D](f: B => C, g: C => D): B => D = b => g(f(b))
+  override def first[B,C,D](f: B => C): ((B,D)) => (C,D) = bd => (f(bd._1), bd._2)
+  override def second[B,C,D](f: B => C): ((D,B)) => (D,C) = db => first(f)(db.swap).swap
+  override def ***[B,C,D,E](f: B => C, g: D => E): ((B,D)) => (C,E) = bd => (f(bd._1), g(bd._2))
+  override def &&&[B,C,D](f: B => C, g: B => D): B => (C,D) = b => ***(f, g)((b,b))
 }
 ```
 
@@ -47,14 +47,14 @@ This is nice and object-oriented, but in practice it turns out to be pretty nois
 We can do this, but it's not pretty:
 
 ```scala
-val arrow = new Function1Arrow()
+val arrow = new Fn1Arrow()
 
-def addC = (xy: (Complex, Complex)) => arrow.***(add(xy._1._1), add(xy._1._2))(xy._2._1, xy._2._2)
+val addC: ((Complex, Complex)) => Complex =
+  xy => arrow.***(add(xy._1._1), add(xy._1._2))(xy._2._1, xy._2._2)
 
-def demo = {
-  val getCs: Unit => (Complex, Complex) = Unit => (getC(), getC())
-  arrow.>>>(getCs, arrow.>>>(addC, arrow.>>>(toStringC, println)))
-}
+val fn1ArrowDemo = arrow.>>>(twoCs(), arrow.>>>(addC, arrow.>>>(show, println)))
+
+fn1ArrowDemo()
 ```
 
 The two most irritating things about this implementation are the prefix notation of the arrow functions and the type noise. It is not easy to tell from this code that it implements the chain correctly. Luckily we can do better.
@@ -75,12 +75,15 @@ class InfixFunction1Arrow[B,C](f: B => C) {
 Though not an implementation of the Arrow trait, this does basically the same thing, but with better type inference and the ability to infix the arrow functions:
 
 ```scala
-implicit def function1ToArrow[B,C](f: B => C): InfixFunction1Arrow[B,C]    = new InfixFunction1Arrow(f)
-implicit def function0ToArrow[C](f: => C):     InfixFunction1Arrow[Unit,C] = new InfixFunction1Arrow(Unit => f)
+implicit def f1ToArrow[B,C](f: B => C): InfixFn1Arrow[B,C]    = new InfixFn1Arrow(f)
+implicit def fn0ToArrow[C](f: => C):    InfixFn1Arrow[Unit,C] = new InfixFn1Arrow(Unit => f)
 
-def addC = (xy: (Complex, Complex)) => (add(xy._1._1) *** add(xy._1._2))(xy._2._1, xy._2._2)
+val addC: ((Complex, Complex)) => Complex =
+  xy => (add(xy._1._1) *** add(xy._1._2))(xy._2._1, xy._2._2)
 
-def demo = (getC(), getC()) >>> addC >>> toStringC >>> println
+val infixFn1ArrowDemo = (getC(), getC()) >>> addC >>> show >>> println
+
+infixFn1ArrowDemo()
 ```
 
 The `demo` method is now much easier to read, and we can plainly see the chaining of each step in the workflow.
