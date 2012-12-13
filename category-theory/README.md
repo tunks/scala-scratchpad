@@ -118,7 +118,7 @@ class EitherApplicative[B, A](x: Either[B, A])(implicit bs: B => Semigroup[B])
 }
 ```
 
-Example: the function `add4` takes four integers that have been parsed from strings, and sums them
+Example: the function `add4` takes four integers that have been parsed from strings, and sums them.
 
 ```scala
 implicit def listS[A](as: List[A]) = new ListSemigroup(as)
