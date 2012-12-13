@@ -86,9 +86,9 @@ val nope: Int = null.asInstanceOf[Int]
 val optionApplicativeDemo2 = 1 ap (nope ap (3 map add3)) // Some(4)
 ```
 
-### The validity applicative functor
+### The either applicative functor
 
-The validity applicative functor can be used to pass potentially invalid arguments to a function.  This is useful when arguments must first be parsed.
+The either applicative functor can be used to pass potentially invalid arguments to a function.  This is useful when arguments must first be parsed.
 
 ```scala
 trait Semigroup[A] {
@@ -99,17 +99,21 @@ class ListSemigroup[A](as: List[A]) extends Semigroup[List[A]] {
   override def append(as2: List[A]) = as ++ as2
 }
 
-sealed trait Validity[A, B] extends Applicative[A, ({type λ[α] = Validity[α, B]})#λ]case class Valid[A, B](a: A)(implicit bs: B => Semigroup[B]) extends Validity[A, B] {
-  override def map[C](f: A => C): Validity[C, B] = Valid[C, B](f(a))
-  override def ap[C](f: Validity[A => C, B]): Validity[C, B] = f match {
-    case Valid(ac)  => Valid(ac(a))
-    case Invalid(b) => Invalid(b)
+class EitherApplicative[B, A](x: Either[B, A])(implicit bs: B => Semigroup[B])
+  extends Applicative[A, ({type λ[α] = Either[B, α]})#λ] {
+  override def map[C](f: A => C): Either[B, C] = x match {
+    case Right(a) => Right(f(a))
+    case Left(b)  => Left(b)
   }
-}case class Invalid[A, B](b: B)(implicit bs: B => Semigroup[B]) extends Validity[A, B] {
-  override def map[C](f: A => C): Validity[C, B] = Invalid(b)
-  override def ap[C](f: Validity[A => C, B]): Validity[C, B] = f match {
-    case Valid(ac)   => Invalid(b)
-    case Invalid(b2) => Invalid(bs(b2) append b)
+  override def ap[C](f: Either[B, A => C]): Either[B, C] = x match {
+    case Right(a) => f match {
+      case Right(ac) => Right(ac(a))
+      case Left(b)   => Left(b)
+    }
+    case Left(b) => f match {
+      case Right(_) => Left(b)
+      case Left(b2) => Left(bs(b) append b2)
+    }
   }
 }
 ```
@@ -118,19 +122,41 @@ Example: the function `add4` takes four integers that have been parsed from stri
 
 ```scala
 implicit def listSemigroup[A](as: List[A]) = new ListSemigroup(as)
-val add4: Int => Int => Int => Int => Int = w => x => y => z => w + x + y + z
+implicit def eitherApplicative[A, B](x: Either[B, A])(implicit bs: B => Semigroup[B]) =
 
-def parse(x: String): Validity[Int, List[String]] = try {
-  Valid[Int, List[String]](x.toInt)
-} catch {
-  case _ => Invalid[Int, List[String]](List("'" + x + "' is not an integer"))
+class Lifter[F[_]] {
+  class Functee[A, B](g: A => B) {
+    def <%>(f: Functor[A, F]) = f map g
+  }
+  class Applicatee[A, B](f: F[A => B]) {
+    def <*>(a: Applicative[A, F]) = a ap f
+  }
+  implicit def functee[A, B](g: A => B) = new eitherLifter.Functee(g)
+  implicit def applicatee[A, B](f: Either[List[Any], A => B]) = new eitherLifter.Applicatee(f)
 }
 
-val validApplicativeDemo = parse("1") ap (parse("2") ap (parse("3") ap (parse("4") map add4)))
-                      // = Valid(10)
+val eitherLifter = new Lifter[({type λ[α] = Either[List[Any], α]})#λ]
+import eitherLifter._
 
-val invalidApplicativeDemo = parse("1") ap (parse("nooo") ap (parse("3") ap (parse("fourve") map add4)))
-                        // = Invalid(List("'fourve' is not an integer", "'nooo' is not an integer"))
+val add4: Int => Int => Int => Int => Int = w => x => y => z => w + x + y + z
+
+def parse(x: String): Either[List[String], Int] = try {
+  Right(x.toInt)
+} catch {
+  case _ => Left(List("'" + x + "' is not an integer"))
+}
+
+val rightApplicativeDemo = parse("1") ap (parse("2") ap (parse("3") ap (parse("4") map add4)))
+                      // = rightApplicativeDemo = Right(10)
+
+val rightApplicativeDemo2 = add4 <%> parse("1") <*> parse("2") <*> parse("3") <*> parse("4")
+                      // = rightApplicativeDemo2 = Right(10)
+
+val leftApplicativeDemo1 = parse("1") ap (parse("nooo") ap (parse("3") ap (parse("fourve") map add4)))
+                      // = leftApplicativeDemo1 = Left(List('nooo' is not an integer, 'fourve' is not an integer))
+
+val leftApplicativeDemo2 = add4 <%> parse("1") <*> parse("nooo") <*> parse("3") <*> parse("fourve")
+                      // = leftApplicativeDemo2 = Left(List('fourve' is not an integer, 'nooo' is not an integer))
 ```
 
 ## Monad

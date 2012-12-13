@@ -102,15 +102,19 @@ trait EitherApplicativeDemo {
   import Semigroup.listSemigroup
   import Applicative.eitherApplicative
 
-  class Functee[A, B](g: A => B) {
-    def <%>(a: Applicative[A, ({type λ[α] = Either[List[String], α]})#λ]) = a map g
+  class Lifter[F[_]] {
+    class Functee[A, B](g: A => B) {
+      def <%>(f: Functor[A, F]) = f map g
+    }
+    class Applicatee[A, B](f: F[A => B]) {
+      def <*>(a: Applicative[A, F]) = a ap f
+    }
+    implicit def functee[A, B](g: A => B) = new eitherLifter.Functee(g)
+    implicit def applicatee[A, B](f: Either[List[Any], A => B]) = new eitherLifter.Applicatee(f)
   }
-  implicit def functee[A, B](g: A => B) = new Functee(g)
 
-  class Applicatee[A, B](g: Either[List[String], A => B]) {
-    def <*>(a: Applicative[A, ({type λ[α] = Either[List[String], α]})#λ]) = a ap g
-  }
-  implicit def applicatee[A, B](g: Either[List[String], A => B]) = new Applicatee(g)
+  val eitherLifter = new Lifter[({type λ[α] = Either[List[Any], α]})#λ]
+  import eitherLifter._
 
   val add4: Int => Int => Int => Int => Int = w => x => y => z => w + x + y + z
 
@@ -126,8 +130,11 @@ trait EitherApplicativeDemo {
   val rightApplicativeDemo2 = add4 <%> parse("1") <*> parse("2") <*> parse("3") <*> parse("4")
   println("rightApplicativeDemo2 = " + rightApplicativeDemo2)
 
-  val leftApplicativeDemo = parse("1") ap (parse("nooo") ap (parse("3") ap (parse("fourve") map add4)))
-  println("leftApplicativeDemo = " + leftApplicativeDemo)
+  val leftApplicativeDemo1 = parse("1") ap (parse("nooo") ap (parse("3") ap (parse("fourve") map add4)))
+  println("leftApplicativeDemo1 = " + leftApplicativeDemo1)
+
+  val leftApplicativeDemo2 = add4 <%> parse("1") <*> parse("nooo") <*> parse("3") <*> parse("fourve")
+  println("leftApplicativeDemo2 = " + leftApplicativeDemo2)
 }
 
 // Monad
