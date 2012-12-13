@@ -154,16 +154,16 @@ def parse(x: String): Either[List[String], Int] = try {
 }
 
 val rightApplicativeDemo = parse("1") ap (parse("2") ap (parse("3") ap (parse("4") map add4)))
-  // = rightApplicativeDemo = Right(10)
+  // rightApplicativeDemo = Right(10)
 
 val rightApplicativeDemo2 = add4 <%> parse("1") <*> parse("2") <*> parse("3") <*> parse("4")
-  // = rightApplicativeDemo2 = Right(10)
+  // rightApplicativeDemo2 = Right(10)
 
 val leftApplicativeDemo1 = parse("1") ap (parse("nooo") ap (parse("3") ap (parse("fourve") map add4)))
-  // = leftApplicativeDemo1 = Left(List('nooo' is not an integer, 'fourve' is not an integer))
+  // leftApplicativeDemo1 = Left(List('nooo' is not an integer, 'fourve' is not an integer))
 
 val leftApplicativeDemo2 = add4 <%> parse("1") <*> parse("nooo") <*> parse("3") <*> parse("fourve")
-  // = leftApplicativeDemo2 = Left(List('fourve' is not an integer, 'nooo' is not an integer))
+  // leftApplicativeDemo2 = Left(List('fourve' is not an integer, 'nooo' is not an integer))
 ```
 
 ## Monad
