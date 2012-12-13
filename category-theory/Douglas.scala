@@ -102,6 +102,16 @@ trait EitherApplicativeDemo {
   import Semigroup.listSemigroup
   import Applicative.eitherApplicative
 
+  class Functee[A, B](g: A => B) {
+    def <%>(a: Applicative[A, ({type λ[α] = Either[List[String], α]})#λ]) = a map g
+  }
+  implicit def functee[A, B](g: A => B) = new Functee(g)
+
+  class Applicatee[A, B](g: Either[List[String], A => B]) {
+    def <*>(a: Applicative[A, ({type λ[α] = Either[List[String], α]})#λ]) = a ap g
+  }
+  implicit def applicatee[A, B](g: Either[List[String], A => B]) = new Applicatee(g)
+
   val add4: Int => Int => Int => Int => Int = w => x => y => z => w + x + y + z
 
   def parse(x: String): Either[List[String], Int] = try {
@@ -112,6 +122,9 @@ trait EitherApplicativeDemo {
 
   val rightApplicativeDemo = parse("1") ap (parse("2") ap (parse("3") ap (parse("4") map add4)))
   println("rightApplicativeDemo = " + rightApplicativeDemo)
+
+  val rightApplicativeDemo2 = add4 <%> parse("1") <*> parse("2") <*> parse("3") <*> parse("4")
+  println("rightApplicativeDemo2 = " + rightApplicativeDemo2)
 
   val leftApplicativeDemo = parse("1") ap (parse("nooo") ap (parse("3") ap (parse("fourve") map add4)))
   println("leftApplicativeDemo = " + leftApplicativeDemo)
