@@ -124,8 +124,8 @@ trait EitherApplicativeDemo {
     case _ => Left(List("'" + x + "' is not an integer"))
   }
 
-  val rightApplicativeDemo = parse("1") ap (parse("2") ap (parse("3") ap (parse("4") map add4)))
-  println("rightApplicativeDemo = " + rightApplicativeDemo)
+  val rightApplicativeDemo1 = parse("1") ap (parse("2") ap (parse("3") ap (parse("4") map add4)))
+  println("rightApplicativeDemo1 = " + rightApplicativeDemo1)
 
   val rightApplicativeDemo2 = add4 <%> parse("1") <*> parse("2") <*> parse("3") <*> parse("4")
   println("rightApplicativeDemo2 = " + rightApplicativeDemo2)

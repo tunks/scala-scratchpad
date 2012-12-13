@@ -121,6 +121,28 @@ class EitherApplicative[B, A](x: Either[B, A])(implicit bs: B => Semigroup[B])
 Example: the function `add4` takes four integers that have been parsed from strings, and sums them
 
 ```scala
+implicit def listS[A](as: List[A]) = new ListSemigroup(as)
+implicit def eitherA[A, B](x: Either[B, A])(implicit bs: B => Semigroup[B]) = new EitherApplicative(x)
+import EitherApplicative._
+
+val add4: Int => Int => Int => Int => Int = w => x => y => z => w + x + y + z
+
+def parse(x: String): Either[List[String], Int] = try {
+  Right(x.toInt)
+} catch {
+  case _ => Left(List("'" + x + "' is not an integer"))
+}
+
+val rightApplicativeDemo1 = parse("1") ap (parse("2") ap (parse("3") ap (parse("4") map add4)))
+  // rightApplicativeDemo1 = Right(10)
+
+val leftApplicativeDemo1 = parse("1") ap (parse("nooo") ap (parse("3") ap (parse("fourve") map add4)))
+  // leftApplicativeDemo1 = Left(List('nooo' is not an integer, 'fourve' is not an integer))
+```
+
+This syntax can be cleaned up a bit with `<%>` and `<*>` functions to apply `map` and `ap` as infix operators.
+
+```scala
 object EitherApplicative {
   val lifter = new Applicative.Lifter[({type λ[α] = Either[List[Any], α]})#λ]
   implicit def functee[A, B](g: A => B) = new lifter.Functee(g)
@@ -137,29 +159,9 @@ object Applicative {
     }
   }
 }
-```
-
-```scala
-implicit def listS[A](as: List[A]) = new ListSemigroup(as)
-implicit def eitherA[A, B](x: Either[B, A])(implicit bs: B => Semigroup[B]) = new EitherApplicative(x)
-import EitherApplicative._
-
-val add4: Int => Int => Int => Int => Int = w => x => y => z => w + x + y + z
-
-def parse(x: String): Either[List[String], Int] = try {
-  Right(x.toInt)
-} catch {
-  case _ => Left(List("'" + x + "' is not an integer"))
-}
-
-val rightApplicativeDemo = parse("1") ap (parse("2") ap (parse("3") ap (parse("4") map add4)))
-  // rightApplicativeDemo = Right(10)
 
 val rightApplicativeDemo2 = add4 <%> parse("1") <*> parse("2") <*> parse("3") <*> parse("4")
   // rightApplicativeDemo2 = Right(10)
-
-val leftApplicativeDemo1 = parse("1") ap (parse("nooo") ap (parse("3") ap (parse("fourve") map add4)))
-  // leftApplicativeDemo1 = Left(List('nooo' is not an integer, 'fourve' is not an integer))
 
 val leftApplicativeDemo2 = add4 <%> parse("1") <*> parse("nooo") <*> parse("3") <*> parse("fourve")
   // leftApplicativeDemo2 = Left(List('fourve' is not an integer, 'nooo' is not an integer))
