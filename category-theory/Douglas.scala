@@ -49,25 +49,29 @@ class OptionApplicative[A](a: A) extends Applicative[A, Option] {
   override def ap[B](f: Option[A => B]): Option[B] = f.map(_(a))
 }
 
-sealed trait Validity[A, B] extends Applicative[A, ({type λ[α] = Validity[α, B]})#λ]
-case class Valid[A, B](a: A)(implicit bs: B => Semigroup[B]) extends Validity[A, B] {
-  override def map[C](f: A => C): Validity[C, B] = Valid[C, B](f(a))
-  override def ap[C](f: Validity[A => C, B]): Validity[C, B] = f match {
-    case Valid(ac)  => Valid(ac(a))
-    case Invalid(b) => Invalid(b)
+class EitherApplicative[B, A](x: Either[B, A])(implicit bs: B => Semigroup[B])
+  extends Applicative[A, ({type λ[α] = Either[B, α]})#λ] {
+  override def map[C](f: A => C): Either[B, C] = x match {
+    case Right(a) => Right(f(a))
+    case Left(b)  => Left(b)
   }
-}
-case class Invalid[A, B](b: B)(implicit bs: B => Semigroup[B]) extends Validity[A, B] {
-  override def map[C](f: A => C): Validity[C, B] = Invalid(b)
-  override def ap[C](f: Validity[A => C, B]): Validity[C, B] = f match {
-    case Valid(ac)   => Invalid(b)
-    case Invalid(b2) => Invalid(bs(b2) append b)
+  override def ap[C](f: Either[B, A => C]): Either[B, C] = x match {
+    case Right(a) => f match {
+      case Right(ac) => Right(ac(a))
+      case Left(b)   => Left(b)
+    }
+    case Left(b) => f match {
+      case Right(_) => Left(b)
+      case Left(b2) => Left(bs(b) append b2)
+    }
   }
 }
 
 object Applicative {
   implicit def fn1Applicative[A, B](g: A => B) = new Fn1Applicative(g)
   implicit def optionApplicative[A](a: A) = new OptionApplicative(a)
+  implicit def eitherApplicative[A, B](x: Either[B, A])(implicit bs: B => Semigroup[B]) =
+    new EitherApplicative(x)
 }
 
 trait Fn1ApplicativeDemo {
@@ -93,21 +97,24 @@ trait OptionApplicativeDemo {
   println("optionApplicativeDemo3 = " + optionApplicativeDemo3)
 }
 
-trait ValidityApplicativeDemo {
+trait EitherApplicativeDemo {
+
   import Semigroup.listSemigroup
+  import Applicative.eitherApplicative
+
   val add4: Int => Int => Int => Int => Int = w => x => y => z => w + x + y + z
 
-  def parse(x: String): Validity[Int, List[String]] = try {
-    Valid[Int, List[String]](x.toInt)
+  def parse(x: String): Either[List[String], Int] = try {
+    Right(x.toInt)
   } catch {
-    case _ => Invalid[Int, List[String]](List("'" + x + "' is not an integer"))
+    case _ => Left(List("'" + x + "' is not an integer"))
   }
 
-  val validApplicativeDemo = parse("1") ap (parse("2") ap (parse("3") ap (parse("4") map add4)))
-  println("validApplicativeDemo = " + validApplicativeDemo)
+  val rightApplicativeDemo = parse("1") ap (parse("2") ap (parse("3") ap (parse("4") map add4)))
+  println("rightApplicativeDemo = " + rightApplicativeDemo)
 
-  val invalidApplicativeDemo = parse("1") ap (parse("nooo") ap (parse("3") ap (parse("fourve") map add4)))
-  println("invalidApplicativeDemo = " + invalidApplicativeDemo)
+  val leftApplicativeDemo = parse("1") ap (parse("nooo") ap (parse("3") ap (parse("fourve") map add4)))
+  println("leftApplicativeDemo = " + leftApplicativeDemo)
 }
 
 // Monad
@@ -273,7 +280,7 @@ object Demo extends App
                with Fn1FunctorDemo
                with Fn1ApplicativeDemo
                with OptionApplicativeDemo
-               with ValidityApplicativeDemo
+               with EitherApplicativeDemo
                with Fn1MonadDemo1
                with Fn1MonadDemo2
                with StateMonadDemo2
