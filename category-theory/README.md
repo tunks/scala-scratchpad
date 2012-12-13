@@ -86,9 +86,9 @@ val nope: Int = null.asInstanceOf[Int]
 val optionApplicativeDemo2 = 1 ap (nope ap (3 map add3)) // Some(4)
 ```
 
-### The either applicative functor
+### The either applicative functor (aka Validation)
 
-The either applicative functor can be used to pass potentially invalid arguments to a function.  This is useful when arguments must first be parsed.
+The either applicative functor can be used to pass potentially invalid arguments to a function, accumulating invalid arguments along the way.  This is also known as Validation, and is useful when arguments to a function must first be parsed.
 
 ```scala
 trait Semigroup[A] {
