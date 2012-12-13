@@ -121,22 +121,31 @@ class EitherApplicative[B, A](x: Either[B, A])(implicit bs: B => Semigroup[B])
 Example: the function `add4` takes four integers that have been parsed from strings, and sums them
 
 ```scala
-implicit def listSemigroup[A](as: List[A]) = new ListSemigroup(as)
-implicit def eitherApplicative[A, B](x: Either[B, A])(implicit bs: B => Semigroup[B]) =
-
-class Lifter[F[_]] {
-  class Functee[A, B](g: A => B) {
-    def <%>(f: Functor[A, F]) = f map g
-  }
-  class Applicatee[A, B](f: F[A => B]) {
-    def <*>(a: Applicative[A, F]) = a ap f
-  }
-  implicit def functee[A, B](g: A => B) = new eitherLifter.Functee(g)
-  implicit def applicatee[A, B](f: Either[List[Any], A => B]) = new eitherLifter.Applicatee(f)
+object EitherApplicative {
+  val lifter = new Applicative.Lifter[({type λ[α] = Either[List[Any], α]})#λ]
+  implicit def functee[A, B](g: A => B) = new lifter.Functee(g)
+  implicit def applicatee[A, B](f: Either[List[Any], A => B]) = new lifter.Applicatee(f)
 }
 
-val eitherLifter = new Lifter[({type λ[α] = Either[List[Any], α]})#λ]
-import eitherLifter._
+object Applicative {
+  class Lifter[F[_]] {
+    class Functee[A, B](g: A => B) {
+      def <%>(f: Functor[A, F]) = f map g
+    }
+    class Applicatee[A, B](f: F[A => B]) {
+      def <*>(a: Applicative[A, F]) = a ap f
+    }
+  }
+  implicit def fn1Applicative[A, B](g: A => B) = new Fn1Applicative(g)
+  implicit def optionApplicative[A](a: A) = new OptionApplicative(a)
+  implicit def eitherApplicative[A, B](x: Either[B, A])(implicit bs: B => Semigroup[B]) = new EitherApplicative(x)
+}
+```
+
+```scala
+implicit def listSemigroup[A](as: List[A]) = new ListSemigroup(as)
+implicit def eitherApplicative[A, B](x: Either[B, A])(implicit bs: B => Semigroup[B]) = new EitherApplicative(x)
+import EitherApplicative._
 
 val add4: Int => Int => Int => Int => Int = w => x => y => z => w + x + y + z
 
