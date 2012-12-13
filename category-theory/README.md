@@ -140,9 +140,8 @@ object Applicative {
 ```
 
 ```scala
-implicit def listSemigroup[A](as: List[A]) = new ListSemigroup(as)
-implicit def eitherApplicative[A, B](x: Either[B, A])(implicit bs: B => Semigroup[B]) =
-  new EitherApplicative(x)
+implicit def listS[A](as: List[A]) = new ListSemigroup(as)
+implicit def eitherA[A, B](x: Either[B, A])(implicit bs: B => Semigroup[B]) = new EitherApplicative(x)
 import EitherApplicative._
 
 val add4: Int => Int => Int => Int => Int = w => x => y => z => w + x + y + z
