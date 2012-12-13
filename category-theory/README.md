@@ -74,7 +74,7 @@ class OptionApplicative[A](a: A) extends Applicative[A, Option] {
 }
 ```
 
-Example: the function `add3` takes three integers that might be null, which Scala interprets as zero, and sums them
+Example: the function `add3` takes three integers that might be null, which Scala interprets as zero, and sums them.
 
 ```scala
 implicit def optionApplicative[A](a: A) = new OptionApplicative(a)
