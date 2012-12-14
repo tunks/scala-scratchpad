@@ -1,11 +1,32 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <!-- saved from url=(0041)http://www.w3.org/Talks/Tools/Slidy2/#(3) -->
 <html lang="en-US" xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>The state monad</title>
+<title>The State Monad</title>
 <link rel="stylesheet" href="slidy.css" type="text/css">
 <script src="slidy.js" charset="utf-8" type="text/javascript"></script>
+<style type="text/css"> 
+  div.toolbar { visibility: hidden; }
+  div.cover { text-align: center; margin-top: 10%; }
+  div.cover h1 { margin-right: 0px; }
+  p.date { margin-top: 100px; }
+  p.author { margin-top: 200px; }
+</style> 
+<script type="text/javascript">
+  w3c_slidy.want_toolbar = false;
+  w3c_slidy.add_initial_prompt = function () {};
+</script>
 </head>
 <body style="visibility: visible; font-size: 14pt;" class=" single_slide">
+
+<div class="cover slide">
+
+<h1>The State Monad</h1>
+
+<p class="date">December 2012
+<p class="author">James Earl Douglas
+<p><a href="http://twitter.com/jearldouglas">@jearldouglas</a>
+
+</div>
 
 <div class="slide">
 
@@ -216,6 +237,16 @@ parseInt("21").map(double).flatMap(meaningOfLife)(Nil)
 parseInt("twenty-one").map(double).flatMap(meaningOfLife)(Nil)
   // (false,List(java.lang.NumberFormatException: For input string: "twenty-one"))
 </pre>
+
+</div>
+
+<div class="slide">
+
+<h1>Reference</h1>
+
+<p><a href="https://github.com/JamesEarlDouglas/scala-scratchpad/tree/master/category-theory#type-classes-category-theory-and-scala">Type Classes, Category Theory, and Scala</a>
+<p><a href="http://www.haskell.org/haskellwiki/Typeclassopedia">Typeclassopedia</a>
+<p><a href="https://code.google.com/p/scalaz/">Scalaz</a>
 
 </div>
 
