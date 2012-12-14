@@ -1,0 +1,223 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0041)http://www.w3.org/Talks/Tools/Slidy2/#(3) -->
+<html lang="en-US" xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>The state monad</title>
+<link rel="stylesheet" href="slidy.css" type="text/css">
+<script src="slidy.js" charset="utf-8" type="text/javascript"></script>
+</head>
+<body style="visibility: visible; font-size: 14pt;" class=" single_slide">
+
+<div class="slide">
+
+<h1>Where we're headed</h1>
+
+<h2>Monad</h2>
+
+<pre>
+trait Monad[A, F[_]] {
+  def map[B](f: A =&gt; B): F[B]
+  def flatMap[B](f: A =&gt; F[B]): F[B]
+}
+</pre>
+
+<p>For our purposes, a monad abstracts over a type constructor <tt>F[_]</tt> (for example, <tt>List[_]</tt>) to provide a couple of functions:
+
+<h2><tt>map</tt></h2>
+
+<p>Lifts a function <tt>A =&gt; B</tt> into a function <tt>F[A] =&gt; F[B]</tt>
+
+<h2><tt>flatMap</tt></h2>
+
+<p>Lifts a function <tt>A =&gt; F[B]</tt> into a function <tt>F[A] =&gt; F[B]</tt>
+
+</div>
+
+<div class="slide">
+
+<h1>Where we're headed</h1>
+
+<h2>State monad*</h2>
+
+<p>Abstracts over a state-passing function <tt>S =&gt; (A, S)</tt>
+
+<p>Our type constructor here is <tt>S =&gt; (_, S)</tt>, where <tt>S</tt> is an arbitrary type of some state
+
+<pre>
+class StateMonad[S, A](g: S =&gt; (A, S)) {
+  def map[B](f: A =&gt; B): (S =&gt; (B, S)) =
+    { state =&gt;
+      val (a, state1) = g(state)
+      (f(a), state1)
+    }
+  def flatMap[B](f: A =&gt; (S =&gt; (B, S))): (S =&gt; (B, S)) =
+    { state =&gt;
+      val (a, state1) = g(state)
+      f(a)(state1)
+    }
+}
+</pre>
+
+<p>* The type has been simplified a bit for brevity.
+
+</div>
+
+<div class="slide">
+
+<h1>Start simple</h1>
+
+<h2>Some impure code</h2>
+
+<pre>
+def parseInt(x: String): Int = x.toInt
+def double(x: Int): Int = x * 2
+def meaningOfLife(x: Int): Boolean = x == 42
+
+meaningOfLife(double(parseInt("1")))
+  // false
+
+meaningOfLife(double(parseInt("21")))
+  // true
+
+meaningOfLife(double(parseInt("twenty-one")))
+  // exception
+</pre>
+
+<ul>
+  <li>Parse an integer</li>
+  <li>Double it</li>
+  <li>Check whether it's the meaning of life</li>
+</ul>
+
+<h2>The problem</h2>
+
+<p>Parse errors cause things to blow up.
+
+</div>
+
+<div class="slide">
+
+<h1>Don't throw exceptions</h1>
+
+<pre>
+def parseInt(x: String): Int = 
+  try {
+    x.toInt
+  } catch {
+    case t =&gt;
+      println(t.toString)
+      0
+  }
+
+meaningOfLife(double(parseInt("1")))
+  // false
+
+meaningOfLife(double(parseInt("21")))
+  // true
+
+meaningOfLife(double(parseInt("twenty-one")))
+  // false, and a message is printed to stdout
+</pre>
+
+<h2>The problem</h2>
+
+<p>This is better, but parse errors still change the state of the world (in this case, stdout).
+
+</div>
+
+<div class="slide">
+
+<h1>Save the world</h1>
+
+<p>We want a way to describe how we'll change the world without actually doing it.  Our function will take in the current state of the world, perform an operation, and return both the result and an updated state of the world
+
+<p><strong><tt>currentWorldState =&gt; (computationResult, newWorldState)</tt></strong>
+
+<p>For example, a function that returns true, and records a log message:
+
+<pre>
+log =&gt; (true, "some message" :: log)
+</pre>
+
+</div>
+
+<div class="slide">
+
+<h1>Log the parse error</h1>
+
+<pre>
+def parseInt(x: String): List[String] =&gt; (Int, List[String]) =
+  log =&gt;
+    try {
+      (x.toInt, log)
+    } catch {
+      case t =&gt;
+        (0, t.toString :: log)
+    }
+</pre>
+
+<h2>Purity achieved</h2>
+
+<p>Now we can keep track of both the parse result and a log entry:
+
+<ul>
+  <li>Without touching global state</li>
+  <li>Without mutating the incoming state</li>
+</ul>
+
+</div>
+
+<div class="slide">
+
+<h1>Log other stuff too</h1>
+
+<pre>
+def meaningOfLife(x: Int): List[String] =&gt; (Boolean, List[String]) =
+  log =&gt;
+    if (x == 42) {
+      (true, "found the meaning of life" :: log)
+    } else {
+      (false, log)
+    }
+</pre>
+
+<h2>More purity</h2>
+
+<p>As before, we do some computation and maybe log a message, all without mutating anything
+
+<h2>Hold the phone</h2>
+
+<p>How the heck do we compose this with <tt>parseInt</tt> and <tt>double</tt>?
+
+</div>
+
+<div class="slide">
+
+<h1>Compose it</h1>
+
+<pre>
+implicit def stateMonad[S, A](g: S =&gt; (A, S)): StateMonad[S, A] = new StateMonad(g)
+
+parseInt("1").map(double).flatMap(meaningOfLife)
+  // a function that needs a log to run
+
+for {
+  parsed  &lt;- parseInt("1")
+  doubled  = double(parsed)
+  meaning &lt;- meaningOfLife(doubled)
+} yield meaning
+  // equivalent to the above function
+
+parseInt("1").map(double).flatMap(meaningOfLife)(Nil)
+  // (false,List())
+
+parseInt("21").map(double).flatMap(meaningOfLife)(Nil)
+  // (true,List(found the meaning of life))
+
+parseInt("twenty-one").map(double).flatMap(meaningOfLife)(Nil)
+  // (false,List(java.lang.NumberFormatException: For input string: "twenty-one"))
+</pre>
+
+</div>
+
+</body>
+</html>
