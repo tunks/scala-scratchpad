@@ -150,18 +150,18 @@ class Fn1Monad[A, B](g: A => B) extends Fn1Applicative[A, B](g)
 
 class StateMonad[S, A](g: S => (A, S)) extends Monad[A, ({type λ[α] = S => (α, S)})#λ] {
   override def map[B](f: A => B): (S => (B, S)) =
-    { state =>
+    state => {
       val (a, state1) = g(state)
       (f(a), state1)
     }
   override def ap[B](f: S => (A => B, S)): (S => (B, S)) =
-    { state =>
+    state => {
       val (a, state1) = g(state)
       val (atob, state2) = f(state1)
       (atob(a), state2)
     }
   override def flatMap[B](f: A => (S => (B, S))): (S => (B, S)) =
-    { state =>
+    state => {
       val (a, state1) = g(state)
       f(a)(state1)
     }
