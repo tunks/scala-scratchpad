@@ -66,12 +66,12 @@ trait Monad[A, F[_]] {
 <pre>
 class StateMonad[S, A](g: S =&gt; (A, S)) {
   def map[B](f: A =&gt; B): (S =&gt; (B, S)) =
-    { state =&gt;
+    state =&gt; {
       val (a, state1) = g(state)
       (f(a), state1)
     }
   def flatMap[B](f: A =&gt; (S =&gt; (B, S))): (S =&gt; (B, S)) =
-    { state =&gt;
+    state =&gt; {
       val (a, state1) = g(state)
       f(a)(state1)
     }
