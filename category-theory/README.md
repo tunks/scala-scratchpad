@@ -279,3 +279,46 @@ val f3: Log => (Int, Log) = for {
 
 val (x, log) = f3(new StdoutLog) // x = 2, log has printed two `info` messages to stdout
 ```
+
+## Arrow
+
+Arrows can be a useful generalization for "assembly line" computation.
+
+```scala
+trait Arrow[A, B, F[_,_]] {
+  def arr: F[A,B]
+  def >>>[C](f: F[B,C]): F[A,C]
+  def first[C]: F[(A,C),(B,C)]
+  def second[C]: F[(C,A),(C,B)]
+  def ***[C,D](f: F[C,D]): F[(A,C),(B,D)]
+  def &&&[C](f: F[A,C]): F[A,(B,C)]
+}
+```
+
+### The unary function arrow
+
+```scala
+class Fn1Arrow[B,C](f: B => C) extends Arrow[B, C, Function1] {
+  override def arr = f
+  override def >>>[D](g: C => D) = (b: B) => g(f(b))
+  override def first[D] = bd => (f(bd._1), bd._2)
+  override def second[D] = db => first(db.swap).swap
+  override def ***[D,E](g: D => E) = (bd: (B,D)) => (f(bd._1), g(bd._2))
+  override def &&&[D](g: B => D) = (b: B) => ***(g)((b,b))
+}
+```
+
+Example: parallel addition
+
+```scala
+implicit def fn1Arrow[A,B](g: A => B): Fn1Arrow[A, B] = new Fn1Arrow(g)
+
+val show: Tuple2[Int, Int] => String = x => "(" + x._1 + ", " + x._2 + ")"
+val add: Int => Int => Int = x => y => x + y
+
+val fn1ArrowDemo = (add(3) *** add(5)) >>> (add(7) *** add(11)) >>> show >>> println 
+  // fn1ArrowDemo = (x, y) => ((x + 3 + 7), (y + 5 + 11))
+
+fn1ArrowDemo((1, 2))
+  // prints (11, 18) to stdout
+```
