@@ -252,12 +252,13 @@ def set[S](s: S): StateMonad[S, S] = new StateMonad(_ =&gt; (s, s))
 def get[S]: StateMonad[S, S] = new StateMonad(s =&gt; (s, s))
 
 for {
-  _ &lt;- set(List("foo", "bar"))
-  a &lt;- f1
-  s &lt;- get[List[String]]
-  _  = println("sneaky peek at the state: " + s)
-  b &lt;- f2(a)
-} yield b
+  _       &lt;- set(List("foo", "bar"))
+  parsed  &lt;- parseInt("1")
+  state   &lt;- get[List[String]]
+  _        = println("sneaky peek at the state: " + state)
+  doubled  = double(parsed)
+  meaning &lt;- meaningOfLife(doubled)
+} yield meaning
 </pre>
 
 </div>
