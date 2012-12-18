@@ -238,6 +238,30 @@ class StateMonad[S, A](g: S => (A, S)) extends Monad[A, ({type λ[α] = S => (α
 }
 ```
 
+Example: explicitly set and get state
+
+```scala
+def set[S](s: S): StateMonad[S, S] = new StateMonad(_ => (s, s))
+def get[S]: StateMonad[S, S] = new StateMonad(s => (s, s))
+
+implicit def stateMonad[S, A](g: S => (A, S)) = new StateMonad(g)
+
+val f1: List[String] => (Int, List[String]) = log => (1, "f1" :: log)
+val f2: Int => List[String] => (Int, List[String]) = x => log => (x + 1, "f2" :: log)
+
+val f3: List[String] => (Int, List[String]) = for {
+  _ <- set(List("foo", "bar"))
+  a <- f1
+  s <- get[List[String]]
+  _  = println("StateMonadDemo3: sneaky peek at the state: " + s)
+  b <- f2(a)
+} yield b
+  // printed to stdout: "StateMonadDemo3: sneaky peek at the state: List(f1, foo, bar)"
+
+val (x, log) = f3(List("this state will be replaced"))
+  // (x, log) = (2, List(f2, f1, foo, bar))
+```
+
 Example: logging to an in-memory list of messages
 
 ```scala

@@ -167,6 +167,11 @@ class StateMonad[S, A](g: S => (A, S)) extends Monad[A, ({type λ[α] = S => (α
     }
 }
 
+object StateMonad {
+  def set[S](s: S): StateMonad[S, S] = new StateMonad(_ => (s, s))
+  def get[S]: StateMonad[S, S] = new StateMonad(s => (s, s))
+}
+
 object Monad {
   type Reader[A, B] = Fn1Monad[A, B]
   implicit def fn1Monad[A, B](g: A => B) = new Fn1Monad(g)
@@ -228,6 +233,25 @@ trait StateMonadDemo2 {
   println("StateMonadDemo1: x = " + x)
 }
 
+trait StateMonadDemo3 {
+  import Monad.stateMonad
+  import StateMonad.{ get, set }
+
+  val f1: List[String] => (Int, List[String]) = log => (1, "f1" :: log)
+  val f2: Int => List[String] => (Int, List[String]) = x => log => (x + 1, "f2" :: log)
+
+  val f3: List[String] => (Int, List[String]) = for {
+    _ <- set(List("foo", "bar"))
+    a <- f1
+    s <- get[List[String]]
+    _  = println("StateMonadDemo3: sneaky peek at the state: " + s)
+    b <- f2(a)
+  } yield b
+
+  val (x, log) = f3(List("this state will be replaced"))
+  println("StateMonadDemo3: (x, log) = (" + x + ", " + log + ")")
+}
+
 // Arrow
 
 class Arrow[A, B](f: A => B) {
@@ -264,5 +288,5 @@ object Demo extends App
                with EitherApplicativeDemo
                with Fn1MonadDemo1
                with Fn1MonadDemo2
-               with StateMonadDemo2
+               with StateMonadDemo3
                with ArrowDemo
