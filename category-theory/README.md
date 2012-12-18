@@ -253,10 +253,10 @@ val f3: List[String] => (Int, List[String]) = for {
   _ <- set(List("foo", "bar"))
   a <- f1
   s <- get[List[String]]
-  _  = println("StateMonadDemo3: sneaky peek at the state: " + s)
+  _  = println("sneaky peek at the state: " + s)
   b <- f2(a)
 } yield b
-  // printed to stdout: "StateMonadDemo3: sneaky peek at the state: List(f1, foo, bar)"
+  // printed to stdout: "sneaky peek at the state: List(f1, foo, bar)"
 
 val (x, log) = f3(List("this state will be replaced"))
   // (x, log) = (2, List(f2, f1, foo, bar))
