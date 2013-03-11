@@ -1,4 +1,4 @@
-# Using java.io.Closeable as a Monad
+# Using `java.io.Closeable` as a Monad
 
 _10 March 2013_
 
