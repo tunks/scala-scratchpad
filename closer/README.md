@@ -99,7 +99,7 @@ val cat: RandomAccessFile => Stream[String] =
 
 ### Print the first line
 
-We can do this with a bunch of `map`s...
+We can do this with a bunch of calls to `map`...
 
 ```scala
 val closer = cat map { _.headOption } map { _ foreach println }
