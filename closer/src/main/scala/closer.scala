@@ -1,72 +1,86 @@
 import java.io.Closeable
 import java.io._
+import Stream._
 
 object Closer {
-  implicit def closer[C <: Closeable, A](f: C => A): Closer[C, A] = new Closer(f)
+  implicit def function1[C <: Closeable, A](f: C => A): Closer[C, A] = new Closer(f)
+  implicit def generic[C <: Closeable, A, X[_]](x: X[A]): Closer[C, X[A]] = new Closer(_ => x)
 }
 
 class Closer[C <: Closeable, A](val f: C => A) {
 
   def run(c: C): A = {
-      val a = f(c)
-      println("***CLOSING***")
-      c.close()
-      a
-    }
+    val a = f(c)
+    println("***CLOSING***")
+    c.close()
+    a
+  }
 
   def map[B, That](g: A => B): C => B = f andThen g
+
   def flatMap[B](g: A => Closer[C, B]): C => B = { c => (f andThen g)(c).f(c) }
 
-}
-
-sealed trait Stream[+A] {
-  def show: String
-  def map[B](f: A => B): Stream[B]
-}
-
-class Cons[A](val head: A, _tail: => Stream[A]) extends Stream[A] {
-  lazy val tail = _tail
-  def show = head.toString + tail.show
-  def map[B](f: A => B): Stream[B] = new Cons(f(head), tail map f)
-}
-
-object Nil extends Stream[Nothing] {
-  def show = ""
-  def map[B](f: Nothing => B): Stream[B] = Nil
 }
 
 object Zapp extends App {
 
   import Closer._
+  import Stream._
+
+  def file = {
+    println("***OPENING***")
+    new RandomAccessFile("jabberwocky.txt", "r")
+  }
 
   val cat: RandomAccessFile => Stream[String] =
-    { x: RandomAccessFile =>
+    { x =>
       println("***READING LINE***")
       Option(x.readLine()) match {
-        case Some(y) => new Cons(y + "\n", cat(x))
-        case None    => Nil
+        case None       => empty
+        case Some(line) => cons(line, cat(x))
       }
     }
 
-  val toBeginning = { c: RandomAccessFile => c.seek(0) }
+  val rewind = { r: RandomAccessFile => r.seek(0) }
 
-  val printItTwice = for {
-    s1 <- cat
-    x1  = s1.show
-    _   = println("FILE CONTENTS:")
-    _   = println(x1)
-    x2  = s1.show
-    _   = println("FILE CONTENTS:")
-    _   = println(x2)
-    _  <- toBeginning
-    s2 <- cat
-    x3  = s2.show
-    _   = println("FILE CONTENTS:")
-    _   = println(x3)
-  } yield Unit
+  def headIt {
+    val closer = cat map { _.headOption } map { _ foreach println }
+    closer run file
+  }
 
+  def headIt2 {
+    val closer =
+      for {
+        stream <- cat
+          line <- stream.headOption
+             _  = println(line)
+      } yield Unit
+    closer run file
+  }
 
-  val file = new RandomAccessFile("file.txt", "r")
-  printItTwice run file
+  def takeIt {
+    val closer =
+      for {
+        stream <- cat
+         lines  = stream.take(4)
+              _ = lines foreach println
+      } yield Unit
+    closer run file
+  }
+
+  def printIt {
+    val closer = cat map { _ foreach println }
+    closer run file
+  }
+
+  def printItTwice {
+    val closer =
+      for {
+        stream <- cat
+             _  = stream foreach println
+             _  = stream foreach println
+      } yield Unit
+    closer run file
+  }
 
 }
