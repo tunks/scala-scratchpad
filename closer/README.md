@@ -4,10 +4,10 @@ _10 March 2013_
 
 Working with instances of `java.io.Closeable`, which can implement a typeless `close()` method, can be tricky to work with in a functional style.  Let's walk through one way to wrap them up into something a little more composable and type safe.
 
-To start, we'll write a function which wraps and executes closeable action:
+To start, we'll write a function that wraps and executes closeable action:
 
 ```scala
-def run[C <: Closeable, A](f: C = A, c: C]): A = {
+def run[C <: Closeable, A](f: C = A, c: C): A = {
   val a = f(c)
   c.close()
   a
@@ -37,7 +37,7 @@ Pretty straightforward; our `f` above is composed with a new `g` that takes `f`'
 Now let's compose a `Closeable`-handling function with another `Closeable`-handling function.
 
 ```scala
-def flatMap[B](g: A => Closer[C, B]): C => B = { c => (f andThen g)(c).f(c) }
+def flatMap[B](g: A => (C => B)): C => B = { c => (f andThen g)(c)(c) }
 ```
 
 This appears to have a bit more going on, but all we're really doing is composing `f` with `g`, and passing along the `Closeable` instance where necessary.
@@ -99,7 +99,7 @@ val cat: RandomAccessFile => Stream[String] =
 
 ### Print the first line
 
-We can do this with a bunch of `map`s
+We can do this with a bunch of `map`s...
 
 ```scala
 val closer = cat map { _.headOption } map { _ foreach println }
@@ -113,7 +113,7 @@ closer run file
 */
 ```
 
-or with a `for` comprehension.
+...or with a `for` comprehension.
 
 ```scala
 val closer =
@@ -133,6 +133,8 @@ val closer =
 ```
 
 ### Print the first several lines
+
+This acts like the Unix `head` command.
 
 ```scala
 val closer =
@@ -159,14 +161,16 @@ And the mome raths outgrabe.
 
 ### Print the entire file
 
+Here we lazily read the file and print each line as we go.
+
 ```scala
 val closer = cat map { _ foreach println }
 closer run file
 ```
 
-Here we lazily read the file and print each line as we go.
-
 ### Print the entire file twice
+
+With this we can lazily read the file, print each line, then print each line again without re-reading the file.
 
 ```scala
 val closer =
@@ -177,5 +181,3 @@ val closer =
     } yield Unit
 closer run file
 ```
-
-With this we can lazily read the file, print each line, then print each line again without re-reading the file.
