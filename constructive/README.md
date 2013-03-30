@@ -15,6 +15,13 @@ In Scala, this might look like a function which takes a unary function and an in
 
 ``` scala
 val sq = constructive1({ x: Int => x * x }, (5,25))
+// returns the function { x: Int => x * x }
+```
+
+Now we can use `sq` to square integers:
+
+``` scala
+val fiveTimesFive = sq(5)
 ```
 
 The function `constructive1` takes our squaring function and an input/output pair, verifies that the input passed to the function produces the output, and returns the verified function.  We can then use `sq`, confident in the assumption that `sq(5) == 25`.
@@ -55,11 +62,13 @@ This throws [a compiler error](http://stackoverflow.com/questions/5143849/scala-
 For simple cases where the function under test can be defined entirely within the argument to the macro, this approach works well.
 
 ``` scala
-val sq = constructive1({ x: Int => x * x }, (5,42))
-// fails to compile, because 5 * 5 != 42
+val sq = constructive1({ x: Int => x * x * x }, (5,25))
+// fails to compile, because 5 * 5 * 5 != 25
 ```
 
 ``` scala
 val sq = constructive1({ x: Int => x * x }, (5,25))
 // compiles, because 5 * 5 == 25
 ```
+
+It would be neat to extend this approach by using ScalaCheck to throw lots of input/output pairs at the function under test.
