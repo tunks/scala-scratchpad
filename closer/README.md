@@ -7,7 +7,7 @@ Working with instances of `java.io.Closeable`, which can implement a typeless `c
 To start, we'll write a function that wraps and executes closeable action:
 
 ```scala
-def run[C <: Closeable, A](f: C = A, c: C): A = {
+def run[C <: Closeable, A](f: C => A, c: C): A = {
   val a = f(c)
   c.close()
   a
