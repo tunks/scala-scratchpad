@@ -83,9 +83,9 @@ object State {
     new StateTM[F,S,A] {
       def run(s: S): F[(A,S)] = x.run(s)
       def map[B](f: A => B): StateT[F,S,B] =
-        new StateT[F,S,B]({ l => x.run(l) map { x => (f(x._1), x._2) } })
+        new StateT[F,S,B]({ g => x.run(g) map { x => (f(x._1), x._2) } })
       def flatMap[B](f: A => StateT[F,S,B]): StateT[F,S,B] =
-        new StateT[F,S,B]({ l => x.run(l) flatMap { x => f(x._1).run(x._2) } })
+        new StateT[F,S,B]({ g => x.run(g) flatMap { x => f(x._1).run(x._2) } })
     }
 
 }
