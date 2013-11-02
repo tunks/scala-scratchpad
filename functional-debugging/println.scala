@@ -39,6 +39,17 @@ trait SideEffects {
 
 }
 
+trait Semigroup[F[_],A] {
+  def *(a: A): F[A]
+}
+
+object Semigroup {
+  implicit def semigroup[A](x: Seq[A]): Semigroup[Seq,A] =
+    new Semigroup[Seq,A] {
+      def *(a: A): Seq[A] = x :+ a
+    }
+}
+
 trait Functor[F[_],A] {
   def map[B](f: A => B): F[B]
 }
@@ -74,7 +85,7 @@ object State {
   import Identity._
 
   case class StateT[F[_],S,A](run: S => F[(A,S)])
-  type State[A] = StateT[ID,Seq[String],A]
+  type State[S,A] = StateT[ID,S,A]
 
   private type StateTM[F[_],S,A] = Monad[({type λ[α] = StateT[F,S,α]})#λ,A]
 
@@ -94,12 +105,15 @@ object Log {
 
   import State._
 
-  type LogT[F[_],A] = StateT[F,Seq[String],A]
+  type LogT[F[_],A] = StateT[F,Semigroup[Seq,String],A]
+
   def logT[F[_],A](x: F[A])(implicit lift: F[A] => Monad[F,A]): LogT[F,A] =
-    new LogT(l => x.map(a => (a, l)))
+    new LogT(log => x.map(a => (a, log)))
 
-  def log(x: String): LogT[Option,Unit] = new LogT(log => Some(((), log ++ Seq(x))))
+  def log(x: String): LogT[Option,Unit] =
+    new LogT(log => Some(((), log * x)))
 
+  def run[F[_],A](log: LogT[F,A]) = log.run(Nil)
 }
 
 trait NoSideEffects {
@@ -108,8 +122,9 @@ trait NoSideEffects {
   import Option._
   import State._
   import Log._
+  import Semigroup._
 
-  lazy val resultM =
+  lazy val resultL =
     for {
       x1 <- logT(parse("42"))
       _  <- log("x1: " + x1)
@@ -121,7 +136,11 @@ trait NoSideEffects {
       _  <- log("x4: " + x4)
     } yield x4
 
-  lazy val result = resultM.run(Nil)
+  lazy val result = run(resultL)
   // Some((42.0,List(x1: 42, x2: 84, x3: 126, x4: 42.0)))
 
+}
+
+object Main extends App with NoSideEffects {
+  println(result)
 }
