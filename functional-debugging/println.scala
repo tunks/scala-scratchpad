@@ -58,6 +58,10 @@ trait Monad[F[_],A] extends Functor[F,A] {
   def flatMap[B](f: A => F[B]): F[B]
 }
 
+trait LiftM[F[_]] {
+  def apply[A](x: F[A]): Monad[F,A]
+}
+
 object Identity {
 
   case class ID[A](a: A)
@@ -72,7 +76,12 @@ object Identity {
 
 object Option {
 
-  implicit def option[A](x: Option[A]): Monad[Option,A] =
+  implicit val liftOption: LiftM[Option] =
+    new LiftM[Option] {
+      def apply[A](x: Option[A]): Monad[Option,A] = x
+    }
+
+  implicit def optionMonad[A](x: Option[A]): Monad[Option,A] =
     new Monad[Option,A] {
       def map[B](f: A => B): Option[B] = x.map(f)
       def flatMap[B](f: A => Option[B]): Option[B] = x.flatMap(f)
@@ -87,30 +96,23 @@ object Writer {
   case class WriterT[F[_],W,A](run: F[(A,W)])
   type Writer[W,A] = WriterT[ID,W,A]
 
-  //private type WriterTM[F[_],W,A] = Monad[({type λ[α] = WriterT[F,W,α]})#λ,A]
+  private type WriterTM[F[_],W,A] = Monad[({type λ[α] = WriterT[F,W,α]})#λ,A]
 
   implicit def writerT[F[_],W,A](x: WriterT[F,W,A])
-      (implicit liftW: F[(A,W)] => Monad[F,(A,W)],
-                liftS: W => Semigroup[W]): WriterTM[F,W,A] =
-    new WriterTM[F,W,A](x)
-
-  class WriterTM[F[_],W <% Semigroup[W],A](x: WriterT[F,W,A])
-     (implicit liftA: F[(A,W)] => Monad[F,(A,W)])
-      {
-    def run: F[(A,W)] = x.run
-    def map[B](f: A => B): WriterT[F,W,B] =
-      new WriterT[F,W,B](x.run map { x => (f(x._1), x._2) })
-    def flatMap[B](f: A => WriterT[F,W,B])
-        (implicit liftB: F[(B,W)] => Monad[F,(B,W)])
-        : WriterT[F,W,B] =
-      new WriterT[F,W,B](
-        x.run flatMap { case (a,w1) =>
-          f(a).run map { case (b,w2) =>
-            (b, w1 * w2)
+      (implicit liftM: LiftM[F], liftS: W => Semigroup[W]): WriterTM[F,W,A] =
+    new WriterTM[F,W,A] {
+      def run: F[(A,W)] = x.run
+      def map[B](f: A => B): WriterT[F,W,B] =
+        new WriterT[F,W,B](liftM(x.run) map { x => (f(x._1), x._2) })
+      def flatMap[B](f: A => WriterT[F,W,B]): WriterT[F,W,B] =
+        new WriterT[F,W,B](
+          liftM(x.run) flatMap { case (a,w1) =>
+            liftM(f(a).run) map { case (b,w2) =>
+              (b, w1 * w2)
+            }
           }
-        }
-      )
-  }
+        )
+    }
 
 }
 
