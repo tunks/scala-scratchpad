@@ -105,12 +105,12 @@ object Log {
 
   import State._
 
-  type LogT[F[_],A] = StateT[F,Semigroup[Seq,String],A]
+  type LogT[F[_],A] = StateT[F,Seq[String],A]
 
   def logT[F[_],A](x: F[A])(implicit lift: F[A] => Monad[F,A]): LogT[F,A] =
     new LogT(log => x.map(a => (a, log)))
 
-  def log(x: String): LogT[Option,Unit] =
+  def log(x: String)(implicit lift: Seq[String] => Semigroup[Seq,String]): LogT[Option,Unit] =
     new LogT(log => Some(((), log * x)))
 
   def run[F[_],A](log: LogT[F,A]) = log.run(Nil)
