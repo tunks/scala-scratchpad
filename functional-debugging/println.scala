@@ -39,14 +39,14 @@ trait SideEffects {
 
 }
 
-trait Semigroup[F[_],A] {
-  def *(a: A): F[A]
+trait Semigroup[A] {
+  def *(a: A): A
 }
 
 object Semigroup {
-  implicit def semigroup[A](x: Seq[A]): Semigroup[Seq,A] =
-    new Semigroup[Seq,A] {
-      def *(a: A): Seq[A] = x :+ a
+  implicit def semigroup[A](x: Seq[A]): Semigroup[Seq[A]] =
+    new Semigroup[Seq[A]] {
+      def *(as: Seq[A]): Seq[A] = x ++ as
     }
 }
 
@@ -80,6 +80,54 @@ object Option {
 
 }
 
+object Writer {
+
+  import Identity._
+
+  case class WriterT[F[_],W,A](run: F[(A,W)])
+  type Writer[W,A] = WriterT[ID,W,A]
+
+  //private type WriterTM[F[_],W,A] = Monad[({type λ[α] = WriterT[F,W,α]})#λ,A]
+
+  implicit def writerT[F[_],W,A](x: WriterT[F,W,A])
+      (implicit liftW: F[(A,W)] => Monad[F,(A,W)],
+                liftS: W => Semigroup[W]): WriterTM[F,W,A] =
+    new WriterTM[F,W,A](x)
+
+  class WriterTM[F[_],W <% Semigroup[W],A](x: WriterT[F,W,A])
+     (implicit liftA: F[(A,W)] => Monad[F,(A,W)])
+      {
+    def run: F[(A,W)] = x.run
+    def map[B](f: A => B): WriterT[F,W,B] =
+      new WriterT[F,W,B](x.run map { x => (f(x._1), x._2) })
+    def flatMap[B](f: A => WriterT[F,W,B])
+        (implicit liftB: F[(B,W)] => Monad[F,(B,W)])
+        : WriterT[F,W,B] =
+      new WriterT[F,W,B](
+        x.run flatMap { case (a,w1) =>
+          f(a).run map { case (b,w2) =>
+            (b, w1 * w2)
+          }
+        }
+      )
+  }
+
+}
+
+object Log {
+
+  import Writer._
+
+  type LogT[F[_],A] = WriterT[F,Seq[String],A]
+
+  def logT[F[_],A](x: F[A])(implicit lift: F[A] => Monad[F,A]): LogT[F,A] =
+    new LogT(x.map(a => (a, Nil)))
+
+  def log(x: String)(implicit lift: Seq[String] => Semigroup[Seq[String]]): LogT[Option,Unit] =
+    new LogT(Some(((), Seq(x))))
+
+}
+
 object State {
 
   import Identity._
@@ -101,26 +149,11 @@ object State {
 
 }
 
-object Log {
-
-  import State._
-
-  type LogT[F[_],A] = StateT[F,Seq[String],A]
-
-  def logT[F[_],A](x: F[A])(implicit lift: F[A] => Monad[F,A]): LogT[F,A] =
-    new LogT(log => x.map(a => (a, log)))
-
-  def log(x: String)(implicit lift: Seq[String] => Semigroup[Seq,String]): LogT[Option,Unit] =
-    new LogT(log => Some(((), log * x)))
-
-  def run[F[_],A](log: LogT[F,A]) = log.run(Nil)
-}
-
 trait NoSideEffects {
 
   import Arithmetic._
   import Option._
-  import State._
+  import Writer._
   import Log._
   import Semigroup._
 
@@ -136,7 +169,7 @@ trait NoSideEffects {
       _  <- log("x4: " + x4)
     } yield x4
 
-  lazy val result = run(resultL)
+  lazy val result = resultL.run
   // Some((42.0,List(x1: 42, x2: 84, x3: 126, x4: 42.0)))
 
 }
