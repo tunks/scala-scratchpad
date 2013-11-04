@@ -18,6 +18,7 @@ Given a way to "show" a `Showable`:
 object Stdout {
   def printLine(x: Showable): Unit = println(x.show)
 }
+```
  
 ...how do we show arbitrary data?
 
@@ -31,6 +32,7 @@ We need to make `42` a `Showable` so that we can use `Stdout#printLine` to show 
 implicit class IntShowable(x: Int) extends Showable {
   def show: String = x.toString
 }
+```
 
 Now we can show `42`:
 
@@ -38,4 +40,4 @@ Now we can show `42`:
 Stdout.printLine(42) // prints "42" to stdout
 ```
  
-This works because Scala sees us trying to pass `42` (an `Int`) as a `Showable`, so it looks for an implicit conversion that can transform an `Int` into a `Showable`. It finds one in `IntShowable`, which provides a constructor with the type `Int` => `Showable`.
+This works because Scala sees us trying to pass `42` (an `Int`) as a `Showable`, so it looks for an implicit conversion that can transform an `Int` into a `Showable`. It finds one in `IntShowable`, which provides a constructor with the type `Int => Showable`.
