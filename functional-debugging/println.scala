@@ -58,8 +58,8 @@ trait Monad[F[_],A] extends Functor[F,A] {
   def flatMap[B](f: A => F[B]): F[B]
 }
 
-trait LiftM[F[_]] {
-  def apply[A](x: F[A]): Monad[F,A]
+trait Lift[F[_],G[_[_],_]] {
+  def apply[A](x: F[A]): G[F,A]
 }
 
 object Identity {
@@ -76,15 +76,13 @@ object Identity {
 
 object Option {
 
-  implicit val liftOption: LiftM[Option] =
-    new LiftM[Option] {
-      def apply[A](x: Option[A]): Monad[Option,A] = x
-    }
-
-  implicit def optionMonad[A](x: Option[A]): Monad[Option,A] =
-    new Monad[Option,A] {
-      def map[B](f: A => B): Option[B] = x.map(f)
-      def flatMap[B](f: A => Option[B]): Option[B] = x.flatMap(f)
+  implicit val lift: Lift[Option,Monad] =
+    new Lift[Option,Monad] {
+      def apply[A](x: Option[A]): Monad[Option,A] =
+        new Monad[Option,A] {
+          def map[B](f: A => B): Option[B] = x.map(f)
+          def flatMap[B](f: A => Option[B]): Option[B] = x.flatMap(f)
+        }
     }
 
 }
@@ -99,7 +97,7 @@ object Writer {
   private type WriterTM[F[_],W,A] = Monad[({type λ[α] = WriterT[F,W,α]})#λ,A]
 
   implicit def writerT[F[_],W,A](x: WriterT[F,W,A])
-      (implicit liftM: LiftM[F], liftS: W => Semigroup[W]): WriterTM[F,W,A] =
+      (implicit liftM: Lift[F,Monad], liftS: W => Semigroup[W]): WriterTM[F,W,A] =
     new WriterTM[F,W,A] {
       def run: F[(A,W)] = x.run
       def map[B](f: A => B): WriterT[F,W,B] =
@@ -122,8 +120,8 @@ object Log {
 
   type LogT[F[_],A] = WriterT[F,Seq[String],A]
 
-  def logT[F[_],A](x: F[A])(implicit lift: F[A] => Monad[F,A]): LogT[F,A] =
-    new LogT(x.map(a => (a, Nil)))
+  def logT[F[_],A](x: F[A])(implicit lift: Lift[F,Monad]): LogT[F,A] =
+    new LogT(lift(x).map(a => (a, Nil)))
 
   def log(x: String)(implicit lift: Seq[String] => Semigroup[Seq[String]]): LogT[Option,Unit] =
     new LogT(Some(((), Seq(x))))
