@@ -1,21 +1,25 @@
-package statet
+# Monad transformers in Scala
 
-object `package` {
-  type State[S,+A] = S => (A,S)
-  type StateT[S,A,F[_]] = S => F[(A,S)]
-}
+*January 24, 2014*
 
-////////////////////////////////////////////////////////////////////////////////
+Monad transformers are useful for nesting different types of monads for use 
+within a single for comprehension.
 
-trait Monad[F[_],A] {
-  def map[B](f: A => B): F[B]
-  def flatMap[B](f: A => F[B]): F[B]
-}
+Before we get there, let's define a couple types of monads.
 
+First, the `Maybe` type:
+
+```scala
 sealed trait Maybe[+A]
 case class Just[A](a: A) extends Maybe[A]
 case object Nada extends Maybe[Nothing]
+```
 
+This is philosophically the same as Scala's `Option`, but without the 
+confusion of whose implementation of `flatMap` we'll be using.  This is 
+implemented for `Maybe` in `MaybeMonad`:
+
+```scala
 object MaybeMonad {
 
   implicit def maybeMonad[A](oa: Maybe[A]): Monad[Maybe,A] =
@@ -38,22 +42,27 @@ class MaybeMonad[A](oa: Maybe[A]) extends Monad[Maybe,A] {
   def map[B](f: A => B): Maybe[B] = MaybeMonad.map(f)(oa)
   def flatMap[B](f: A => Maybe[B]): Maybe[B] = MaybeMonad.flatMap(oa)(f)
 }
+```
 
-trait MaybeExample {
+If we import the implicit conversion `maybeMonad`, we can use `Maybe` in a for 
+comprehension:
 
-  import MaybeMonad.maybeMonad
+```scala
+import MaybeMonad.maybeMonad
 
-  val a: Maybe[Int] =
-    for {
-      x <- Just(1)
-      y  = x + 1
-    } yield y
+val a: Maybe[Int] =
+  for {
+    x <- Just(1)
+    y  = x + 1
+  } yield y
 
-  println("a: " + a)
+println("a: " + a) // a: Just(2)
+```
 
-}
+Next, the `State` type and its monad:
 
-////////////////////////////////////////////////////////////////////////////////
+```scala
+type State[S,+A] = S => (A,S)
 
 object StateMonad {
 
@@ -80,28 +89,33 @@ class StateMonad[S,A](sa: State[S,A])
   def map[B](f: A => B): State[S,B] = StateMonad.map(f)(sa)
   def flatMap[B](f: A => State[S,B]): State[S,B] = StateMonad.flatMap(sa)(f)
 }
+```
 
-trait StateExample {
+Similarly, we can use `State` in a for comprehension by importing `stateMonad`:
 
-  import StateMonad.stateMonad
+```scala
+import StateMonad.stateMonad
 
-  val b: State[Int,Int] = {
+val b: State[Int,Int] = {
 
-    def get[S]: State[S,S] = s => (s,s)
-    def set[S](s: S): State[S,Unit] = _ => ((),s)
+  def get[S]: State[S,S] = s => (s,s)
+  def set[S](s: S): State[S,Unit] = _ => ((),s)
 
-    for {
-      x <- get[Int]
-      y  = x + 1
-      _ <- set(5)
-    } yield y
-  }
-
-  println("b(0): " + b(0))
-
+  for {
+    x <- get[Int]
+    y  = x + 1
+    _ <- set(5)
+  } yield y
 }
 
-////////////////////////////////////////////////////////////////////////////////
+println("b(0): " + b(0)) // b(0): (1,5)
+```
+
+To use `Maybe` in conjunction with `State`, we need to abstract `State` into a 
+monad transformer called `StateT`:
+
+```scala
+type StateT[S,A,F[_]] = S => F[(A,S)]
 
 object StateTMonad {
   implicit def stateTMonad[S,A,F[_]](sa: StateT[S,A,F])
@@ -136,38 +150,36 @@ class StateTMonad[S,A,F[_]](sa: StateT[S,A,F])
       fab
     }
 }
+```
 
-trait StateTExample {
+Now with our three implicit conversions, we can put `Maybe` and `State` 
+together:
 
-  import MaybeMonad.maybeMonad
-  import StateMonad.stateMonad
-  import StateTMonad.stateTMonad
+```scala
+import MaybeMonad.maybeMonad
+import StateMonad.stateMonad
+import StateTMonad.stateTMonad
 
-  val c: StateT[Int,Int,Maybe] = {
+val c: StateT[Int,Int,Maybe] = {
 
-    def get[S]: StateT[S,S,Maybe] = s => Just((s,s))
-    def set[S](s: S): StateT[S,Unit,Maybe] = _ => Just(((),s))
+  def get[S]: StateT[S,S,Maybe] = s => Just((s,s))
+  def set[S](s: S): StateT[S,Unit,Maybe] = _ => Just(((),s))
 
-    def lift[S,A](oa: Maybe[A]): StateT[S,A,Maybe] = s => oa.map(a => (a,s))
+  def lift[S,A](oa: Maybe[A]): StateT[S,A,Maybe] = s => oa.map(a => (a,s))
 
-    def remainder(a: Int, b: Int): Maybe[Int] =
-      a % b match {
-        case 0 => Nada
-        case r => Just(r)
-      }
+  def remainder(a: Int, b: Int): Maybe[Int] =
+    a % b match {
+      case 0 => Nada
+      case r => Just(r)
+    }
 
-    for {
-      x <- get[Int]
-      y <- lift[Int,Int](remainder(x, 2))
-      _ <- set(5)
-    } yield y
-  }
-
-  println("c(0): " + c(0))
-  println("c(1): " + c(1))
-
+  for {
+    x <- get[Int]
+    y <- lift[Int,Int](remainder(x, 2))
+    _ <- set(5)
+  } yield y
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-object Main extends App with MaybeExample with StateExample with StateTExample {}
+println("c(0): " + c(0)) // Nada
+println("c(1): " + c(1)) // Just((1,5))
+```
