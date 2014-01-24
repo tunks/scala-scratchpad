@@ -2,7 +2,7 @@ package statet
 
 object `package` {
 
-  implicit def optMonad[A](oa: Opt[A]): Monad[Opt,A] = new OptMonad[A](oa)
+  implicit def optMonad[A](oa: Maybe[A]): Monad[Maybe,A] = new MaybeMonad[A](oa)
 
   type State[S,+A] = S => (A,S)
   implicit def stateMonad[S,A](sa: State[S,A]): Monad[({type λ[α] = State[S,α]})#λ,A] =
@@ -19,27 +19,27 @@ trait Monad[F[_],A] {
   def flatMap[B](f: A => F[B]): F[B]
 }
 
-sealed trait Opt[+A]
-case class Jus[A](a: A) extends Opt[A]
-case object Non extends Opt[Nothing]
+sealed trait Maybe[+A]
+case class Just[A](a: A) extends Maybe[A]
+case object Nada extends Maybe[Nothing]
 
-object OptMonad {
-  def unit[A](a: A): Opt[A] = Jus(a)
-  def map[A,B](f: A => B)(oa: Opt[A]): Opt[B] =
+object MaybeMonad {
+  def unit[A](a: A): Maybe[A] = Just(a)
+  def map[A,B](f: A => B)(oa: Maybe[A]): Maybe[B] =
     oa match {
-      case Jus(a) => Jus(f(a))
-      case Non    => Non
+      case Just(a) => Just(f(a))
+      case Nada    => Nada
     }
-  def flatMap[A,B](oa: Opt[A])(f: A => Opt[B]): Opt[B] =
+  def flatMap[A,B](oa: Maybe[A])(f: A => Maybe[B]): Maybe[B] =
     oa match {
-      case Jus(a) => f(a)
-      case Non    => Non
+      case Just(a) => f(a)
+      case Nada    => Nada
     }
 }
 
-class OptMonad[A](oa: Opt[A]) extends Monad[Opt,A] {
-  def map[B](f: A => B): Opt[B] = OptMonad.map(f)(oa)
-  def flatMap[B](f: A => Opt[B]): Opt[B] = OptMonad.flatMap(oa)(f)
+class MaybeMonad[A](oa: Maybe[A]) extends Monad[Maybe,A] {
+  def map[B](f: A => B): Maybe[B] = MaybeMonad.map(f)(oa)
+  def flatMap[B](f: A => Maybe[B]): Maybe[B] = MaybeMonad.flatMap(oa)(f)
 }
 
 object StateMonad {
@@ -92,9 +92,9 @@ class StateTMonad[S,A,F[_]](sa: StateT[S,A,F])(implicit m: F[(A,S)] => Monad[F,(
 
 object Main extends App {
 
-  val a: Opt[Int] =
+  val a: Maybe[Int] =
     for {
-      x <- Jus(1)
+      x <- Just(1)
       y  = x + 1
     } yield y
 
@@ -114,17 +114,17 @@ object Main extends App {
 
   println("b(0): " + b(0))
 
-  val c: StateT[Int,Int,Opt] = {
+  val c: StateT[Int,Int,Maybe] = {
 
-    def get[S]: StateT[S,S,Opt] = s => Jus((s,s))
-    def set[S](s: S): StateT[S,Unit,Opt] = _ => Jus(((),s))
+    def get[S]: StateT[S,S,Maybe] = s => Just((s,s))
+    def set[S](s: S): StateT[S,Unit,Maybe] = _ => Just(((),s))
 
-    def lift[S,A](oa: Opt[A]): StateT[S,A,Opt] = s => oa.map(a => (a,s))
+    def lift[S,A](oa: Maybe[A]): StateT[S,A,Maybe] = s => oa.map(a => (a,s))
 
-    def remainder(a: Int, b: Int): Opt[Int] =
+    def remainder(a: Int, b: Int): Maybe[Int] =
       a % b match {
-        case 0 => Non
-        case r => Jus(r)
+        case 0 => Nada
+        case r => Just(r)
       }
 
     for {
