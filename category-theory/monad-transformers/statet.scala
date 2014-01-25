@@ -43,13 +43,18 @@ trait MaybeExample {
 
   import MaybeMonad.maybeMonad
 
-  val a: Maybe[Int] =
+  val maybeA: Maybe[Int] =
     for {
       x <- Just(1)
       y  = x + 1
     } yield y
 
-  println("a: " + a)
+  println("maybeA: " + maybeA)
+
+  val maybeB: Maybe[Int] =
+    Just(1).map(x => x + 1)
+
+  println("maybeB: " + maybeB)
 
 }
 
@@ -85,7 +90,7 @@ trait StateExample {
 
   import StateMonad.stateMonad
 
-  val b: State[Int,Int] = {
+  val stateA: State[Int,Int] = {
 
     def get[S]: State[S,S] = s => (s,s)
     def set[S](s: S): State[S,Unit] = _ => ((),s)
@@ -97,9 +102,58 @@ trait StateExample {
     } yield y
   }
 
-  println("b(0): " + b(0))
+  println("stateA(0): " + stateA(0))
+
+  val stateB: State[Int,Int] = {
+
+    def get[S]: State[S,S] = s => (s,s)
+    def set[S](s: S): State[S,Unit] = _ => ((),s)
+
+    get[Int].map { x =>
+      val y = x + 1
+      (x, y)
+    }.flatMap { case (x, y) =>
+      set(5).map(_ => y)
+    }
+  }
+
+  println("stateB(0): " + stateB(0))
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+/*
+trait MaybeStateExample {
+
+  import MaybeMonad.maybeMonad
+  import StateMonad.stateMonad
+
+  val maybeState = {
+
+    def get[S]: State[S,S] = s => (s,s)
+    def set[S](s: S): State[S,Unit] = _ => ((),s)
+
+    def remainder(a: Int, b: Int): Maybe[Int] =
+      a % b match {
+        case 0 => Nada
+        case r => Just(r)
+      }
+
+    for {
+      x <- get[Int]
+      y <- remainder(x, 2)
+           // [error]  found   : statet.Maybe[Nothing]
+           // [error]  required: Int => (?, Int)
+      _ <- set(5)
+           // [error]  found   : Int => (Int, Int)
+           // [error]  required: statet.Maybe[?]
+    } yield y
+  }
+
+  println("maybeState(0): " + maybeState(0))
 
 }
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -143,7 +197,7 @@ trait StateTExample {
   import StateMonad.stateMonad
   import StateTMonad.stateTMonad
 
-  val c: StateT[Int,Int,Maybe] = {
+  val stateTA: StateT[Int,Int,Maybe] = {
 
     def get[S]: StateT[S,S,Maybe] = s => Just((s,s))
     def set[S](s: S): StateT[S,Unit,Maybe] = _ => Just(((),s))
@@ -163,8 +217,8 @@ trait StateTExample {
     } yield y
   }
 
-  println("c(0): " + c(0))
-  println("c(1): " + c(1))
+  println("stateTA(0): " + stateTA(0))
+  println("stateTA(1): " + stateTA(1))
 
 }
 

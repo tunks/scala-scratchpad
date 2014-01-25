@@ -2,8 +2,8 @@
 
 *January 24, 2014*
 
-Monad transformers are useful for nesting different types of monads for use 
-within a single for comprehension.
+Monad transformers are useful for enabling interaction between different types 
+of monads by "nesting" them into a higher-level monadic abstraction.
 
 Before we get there, let's define a couple types of monads.
 
@@ -16,8 +16,8 @@ case object Nada extends Maybe[Nothing]
 ```
 
 This is philosophically the same as Scala's `Option`, but without the 
-confusion of whose implementation of `flatMap` we'll be using.  This is 
-implemented for `Maybe` in `MaybeMonad`:
+confusion of whose implementations of `map` and `flatMap` we'll be using.  
+These functions are implemented for `Maybe` in `MaybeMonad`:
 
 ```scala
 object MaybeMonad {
@@ -50,16 +50,25 @@ comprehension:
 ```scala
 import MaybeMonad.maybeMonad
 
-val a: Maybe[Int] =
+val maybeA: Maybe[Int] =
   for {
     x <- Just(1)
     y  = x + 1
   } yield y
 
-println("a: " + a) // a: Just(2)
+println("maybeA: " + maybeA) // maybeA: Just(2)
 ```
 
-Next, the `State` type and its monad:
+The desugared version of this code simply uses `map`:
+
+```scala
+val maybeB: Maybe[Int] =
+  Just(1).map(x => x + 1)
+
+println("maybeB: " + maybeB) // maybeB: Just(2)
+```
+
+Next, we define the `State` type and its monad:
 
 ```scala
 type State[S,+A] = S => (A,S)
@@ -96,7 +105,7 @@ Similarly, we can use `State` in a for comprehension by importing `stateMonad`:
 ```scala
 import StateMonad.stateMonad
 
-val b: State[Int,Int] = {
+val stateA: State[Int,Int] = {
 
   def get[S]: State[S,S] = s => (s,s)
   def set[S](s: S): State[S,Unit] = _ => ((),s)
@@ -108,8 +117,60 @@ val b: State[Int,Int] = {
   } yield y
 }
 
-println("b(0): " + b(0)) // b(0): (1,5)
+println("stateA(0): " + stateA(0)) // stateA(0): (1,5)
 ```
+
+The desugared version of this code uses both `map` and `flatMap`:
+
+```scala
+val stateB: State[Int,Int] = {
+
+  def get[S]: State[S,S] = s => (s,s)
+  def set[S](s: S): State[S,Unit] = _ => ((),s)
+
+  get[Int].map { x =>
+    val y = x + 1
+    (x, y)
+  }.flatMap { case (x, y) =>
+    set(5).map(_ => y)
+  }
+}
+
+println("stateB(0): " + stateB(0)) // stateB(0): (1,5)
+```
+
+If we want to use these monads together, things get tricky.  They can't cleanly 
+coexist in a for comprehension:
+
+```scala
+val maybeState = {
+
+  def get[S]: State[S,S] = s => (s,s)
+  def set[S](s: S): State[S,Unit] = _ => ((),s)
+
+  def remainder(a: Int, b: Int): Maybe[Int] =
+    a % b match {
+      case 0 => Nada
+      case r => Just(r)
+    }
+
+  for {
+    x <- get[Int]
+    y <- remainder(x, 2)
+         // [error]  found   : statet.Maybe[Nothing]
+         // [error]  required: Int => (?, Int)
+    _ <- set(5)
+         // [error]  found   : Int => (Int, Int)
+         // [error]  required: statet.Maybe[?]
+  } yield y
+}
+
+println("maybeState(0): " + maybeState(0))
+```
+
+This won't compile, because the types are all wrong.  We can't pass functions 
+to `map` and `flatMap` unless the inputs and outputs conform to the exact type 
+constructor `F[_]` of a given monad instance. 
 
 To use `Maybe` in conjunction with `State`, we need to abstract `State` into a 
 monad transformer called `StateT`:
@@ -160,7 +221,7 @@ import MaybeMonad.maybeMonad
 import StateMonad.stateMonad
 import StateTMonad.stateTMonad
 
-val c: StateT[Int,Int,Maybe] = {
+val stateTA: StateT[Int,Int,Maybe] = {
 
   def get[S]: StateT[S,S,Maybe] = s => Just((s,s))
   def set[S](s: S): StateT[S,Unit,Maybe] = _ => Just(((),s))
@@ -180,6 +241,11 @@ val c: StateT[Int,Int,Maybe] = {
   } yield y
 }
 
-println("c(0): " + c(0)) // Nada
-println("c(1): " + c(1)) // Just((1,5))
+println("stateTA(0): " + stateTA(0)) // Nada
+println("stateTA(1): " + stateTA(1)) // Just((1,5))
 ```
+
+The use of `lift` in the for comprehension converts `remainder` from a `Maybe` 
+to a `StateT[Int,Int,Maybe]`, so its type matches that of `get` and `set`.  I 
+like to think of `lift` as allowing us to "peek" into the embedded `Maybe` to 
+access its functions.
