@@ -1,9 +1,5 @@
 object Implicits {
 
-  implicit class RichValue[A](val x: A) extends AnyVal {
-    def -->[B](f: A => B): B = f(x)
-  }
-
   implicit class RichTuple2[A,B](val x: Tuple2[A,B]) extends AnyVal {
     def map[C,D](f: (A,B) => (C,D)): Tuple2[C,D] = f(x._1, x._2)
     def mapFst[C](f: A => C): Tuple2[C,B] = (f(x._1), x._2)
