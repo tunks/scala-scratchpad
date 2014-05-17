@@ -1,22 +1,16 @@
-object Implicits {
-
-  implicit class RichTuple2[A,B](val x: Tuple2[A,B]) extends AnyVal {
-    def map[C,D](f: (A,B) => (C,D)): Tuple2[C,D] = f(x._1, x._2)
-    def mapFst[C](f: A => C): Tuple2[C,B] = (f(x._1), x._2)
-    def mapSnd[C](f: B => C): Tuple2[A,C] = (x._1, f(x._2))
-  }
-
-}
-
 case class State[A,S](run: S => (A,S)) {
 
-  import Implicits.RichTuple2
-
   def map[B](g: A => B): State[B,S] =
-    State(s => run(s) mapFst g)
+    State({ s =>
+      val (a,s2) = run(s)
+      (g(a),s2)
+    })
 
   def flatMap[B](g: A => State[B,S]): State[B,S] =
-    State(s => run(s) map { (a,s2) => g(a).run(s2) })
+    State({ s =>
+      val (a,s2) = run(s)
+      g(a).run(s2)
+    })
 
 }
 
