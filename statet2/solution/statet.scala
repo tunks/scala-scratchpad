@@ -17,10 +17,10 @@ case class StateT[F[_]: Monad,A,S](run: S => F[(A,S)])
   private val m: Monad[F] = implicitly[Monad[F]]
 
   def map[B](g: A => B): StateT[F,B,S] =
-    StateT({ s => m.map(run(s))({ case (a,s2) => (g(a),s2) }) })
+    StateT(s => m.map(run(s))({ case (a,s2) => (g(a),s2) }))
 
   def flatMap[B](g: A => StateT[F,B,S]): StateT[F,B,S] =
-    StateT({ s => m.flatMap(run(s))({ case (a,s2) => g(a).run(s2) }) })
+    StateT(s => m.flatMap(run(s))({ case (a,s2) => g(a).run(s2) }))
 
 }
 
@@ -40,7 +40,7 @@ object Main extends App {
     StateT(m => m.get(k) map { v => (v,m) })
 
   def getAndDouble(k: String): StateT[Option,Int,Map[String,Int]] =
-    StateT({ m => m.get(k) map { v => (v, m + (k -> v * 2)) } })
+    StateT(m => m.get(k) map { v => (v, m + (k -> v * 2)) })
 
   val resultS: StateT[Option,Int,Map[String,Int]] =
     for {
