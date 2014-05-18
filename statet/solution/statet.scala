@@ -37,9 +37,7 @@ object Main extends App {
     StateT(m => m.get(k) map { v => (v,m) })
 
   def getAndDouble(k: String): StateT[Option,Int,Map[String,Int]] =
-    StateT({ m =>
-      m.get(k) map { v => (v, m + (k -> v * 2)) }
-    })
+    StateT({ m => m.get(k) map { v => (v, m + (k -> v * 2)) } })
 
   val resultS: StateT[Option,Int,Map[String,Int]] =
     for {
