@@ -122,7 +122,7 @@ val closer =
       line <- stream.headOption
          _  = println(line)
   } yield Unit
-  closer run file
+closer run file
 
 /* Output:
 ***OPENING***
@@ -143,7 +143,7 @@ val closer =
      lines  = stream.take(4)
           _ = lines foreach println
   } yield Unit
-  closer run file
+closer run file
 
 /* Output:
 ***OPENING***
