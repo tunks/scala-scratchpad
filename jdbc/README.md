@@ -1,12 +1,18 @@
 # JDBC database access in Scala
 
+*June 8, 2014*
+
 ## Fixed queries
 
 ```scala
-import java.sql.Connection
-
 case class Book(title: String)
+```
 
+```scala
+import java.sql.Connection
+```
+
+```scala
 val books: Connection => List[Book] =
   { c =>
     val q = "SELECT TITLE FROM BOOK"
@@ -28,10 +34,6 @@ val books: Connection => List[Book] =
 ## Prepared statements
 
 ```scala
-import java.sql.Connection
-
-case class Book(title: String)
-
 def addBook(b: Book): Connection => Unit =
   { c =>
     val s = "INSERT INTO BOOK (TITLE) VALUES (?)"
