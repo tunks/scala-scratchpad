@@ -1,4 +1,4 @@
-name := "xwp-auth"
+name := "servlet-auth"
 
 scalaVersion := "2.10.2"
 
