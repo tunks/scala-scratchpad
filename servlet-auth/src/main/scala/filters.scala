@@ -57,7 +57,7 @@ trait Auth extends Filter {
     val res = sres.asInstanceOf[HttpServletResponse]
 
     findSignout(req) map { _ =>
-      val c = new Cookie("session_id", null)
+      val c = new Cookie("session_key", null)
       res.addCookie(c)
       res.sendRedirect(req.getRequestURI)
     } orElse findEmail(req).map { e =>
@@ -93,14 +93,14 @@ trait Auth extends Filter {
   private def findSession(r: HttpServletRequest): Option[Session] =
     for {
       cs <- Option(r.getCookies)
-      c  <- cs find { c => c.getName == "session_id" }
-      id  = c.getValue
-      s  <- DB.findSession(id)
+      c  <- cs find { c => c.getName == "session_key" }
+      key  = c.getValue
+      s  <- DB.findSession(key)
     } yield s
 
   private def setSession(s: Session)(r: HttpServletResponse): Unit = {
     val maxAge: Int = (s.expiration - (new Date).getTime).toInt
-    val c = new Cookie("session_id", s.id)
+    val c = new Cookie("session_key", s.key)
     c.setMaxAge(maxAge)
     r.addCookie(c)
   }

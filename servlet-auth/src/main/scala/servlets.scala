@@ -12,7 +12,7 @@ class Sample extends HttpServlet {
   def findEmail(r: HttpServletRequest): Email =
     (for {
       cs <- Option(r.getCookies)
-      c  <- cs find { c => c.getName == "session_id" }
+      c  <- cs find { c => c.getName == "session_key" }
       s  <- DB.findSession(c.getValue)
       e  <- DB.findEmail(s)
     } yield e).get

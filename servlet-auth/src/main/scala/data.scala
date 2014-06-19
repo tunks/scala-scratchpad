@@ -1,7 +1,7 @@
 package data
 
 case class Nonce(value: String)
-case class Session(id: String, expiration: Long)
+case class Session(key: String, expiration: Long)
 case class Email(value: String)
 
 object DB {
@@ -27,17 +27,17 @@ object DB {
 
   def addSession(e: Email): Session = {
     val thirtyDays = 30L * 24L * 60L * 60L * 1000L
-    val id = UUID.randomUUID.toString
+    val key = UUID.randomUUID.toString
     val expiration = (new Date).getTime + thirtyDays
-    val s = Session(id, expiration)
-    sessions = sessions + (s.id -> s)
+    val s = Session(key, expiration)
+    sessions = sessions + (s.key -> s)
     emails = emails + (s -> e)
     s
   }
 
-  def findSession(id: String): Option[Session] =
+  def findSession(key: String): Option[Session] =
     for {
-      s <- sessions.get(id)
+      s <- sessions.get(key)
       if s.expiration > (new Date).getTime
     } yield s
 
