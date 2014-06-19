@@ -62,7 +62,8 @@ trait Auth extends Filter {
       res.sendRedirect(req.getRequestURI)
     } orElse findEmail(req).map { e =>
        val nonce = DB.addNonce(Email(e))
-       val message = "sign-in at http://localhost:8080/?auth_key=" + nonce.value
+       val url = req.getRequestURL + "?auth_key=" + nonce.value
+       val message = "sign-in at " + url
        email(e, "xwp-auth@local", "your sign-in url", message)
        keySent(req, res)
     } orElse findNonce(req).map { e =>
