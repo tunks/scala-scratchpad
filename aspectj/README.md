@@ -2,8 +2,9 @@
 
 *June 21, 2014*
 
-This example shows how to instrument existing Scala code with a method logging 
-advice to collect basic statistics about method executions.
+This example builds on an [old Spring AOP example](https://github.com/earldouglas/barebones-spring-mvc/tree/master/reference/aop-method-logging#method-logging-with-spring-aop) 
+to show how to instrument existing Scala code with a method logging advice to 
+collect basic statistics about method executions.
 
 We start with some simple code that we want to analyze:
 
@@ -24,7 +25,7 @@ Next we build the wrapper that will analyze it:
 
 ```scala
 @Around("execution(* example..*.*(..))")
-def timeMethod(joinPoint: ProceedingJoinPoint): Any = {
+def logMethod(joinPoint: ProceedingJoinPoint): Any = {
   val start = System.currentTimeMillis
   val retVal = joinPoint.proceed
   val time = System.currentTimeMillis - start
@@ -76,7 +77,8 @@ javaOptions += "-javaagent:" + System.getProperty("user.home") + "/.ivy2/cache/o
 fork := true
 ```
 
-When we run under sbt, we see some interesting output from log4j:
+When we run under sbt, we see some interesting output from log4j, including 
+method signatures, execution times, and call counts:
 
 ```
 > run

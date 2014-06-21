@@ -18,7 +18,7 @@ class MethodLogger {
     }
 
   @Around("execution(* example..*.*(..))")
-  def timeMethod(joinPoint: ProceedingJoinPoint): Any = {
+  def logMethod(joinPoint: ProceedingJoinPoint): Any = {
     val start = System.currentTimeMillis
     val retVal = joinPoint.proceed
     val time = System.currentTimeMillis - start
