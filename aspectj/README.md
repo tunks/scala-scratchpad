@@ -1,4 +1,4 @@
-# Method logging with AspectJ
+# Scala method logging with AspectJ
 
 *June 21, 2014*
 
