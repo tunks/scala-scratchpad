@@ -1,6 +1,6 @@
 # Scala method logging with AspectJ
 
-June 21, 2014
+*June 21, 2014*
 
 This example shows how to instrument existing Scala code with a method logging 
 advice to collect basic statistics about method executions.
