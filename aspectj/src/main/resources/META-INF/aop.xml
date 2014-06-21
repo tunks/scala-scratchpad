@@ -1,0 +1,12 @@
+<aspectj>
+
+  <aspects>
+    <aspect name="logger.MethodLogger"/>
+  </aspects>
+
+  <weaver options="-XnoInline">
+    <include within="logger.*"/>
+    <include within="example.*"/>
+  </weaver>
+
+</aspectj>
