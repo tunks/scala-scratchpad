@@ -1,6 +1,6 @@
 # Exercise: covariance in Scala
 
-Starting with the implementation from [the previous exercise](https://github.com/earldouglas/scala-scratchpad/tree/master/option#exercise-option-monad-in-scala):
+Starting with the `Option` implementation from [the previous exercise](https://github.com/earldouglas/scala-scratchpad/tree/master/option#exercise-option-monad-in-scala):
 
 ```scala
 sealed trait Option[A] { ... }
