@@ -108,7 +108,8 @@ trait SimpleImpl extends EffectRunner {
 }
 ```
 
-The effects interpreter is exercised at the top-level of the application.
+Finally, the effects interpreter is exercised at the top-level of the 
+application.
 
 ```scala
 object Main extends App with SimpleImpl with ProgramRunner {
