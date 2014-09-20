@@ -2,15 +2,15 @@ package demo
 
 import effects._
 
-trait DB extends EffectRunner {
+trait DB extends Effects {
 
    override def runEffect[A](a: Effect[A]): A =
      a match {
-       case Pure(a)         => a
-       case Save(n)         => save(n)
-       case Enumerate       => enumerate()
-       case FindByName(n)   => findByName(n)
-       case FindByStance(s) => findByStance(s)
+       case Pure(a)        => a
+       case Save(n)        => save(n)
+       case Enumerate      => enumerate()
+       case GetByName(n)   => getByName(n)
+       case GetByStance(s) => getByStance(s)
      }
 
   private var db: Map[String, Stance] = Map.empty
@@ -21,10 +21,10 @@ trait DB extends EffectRunner {
   private def enumerate(): Iterable[NakMuay] =
     db map { case (n,s) => NakMuay(n, s) }
 
-  private def findByName(n: String): Option[NakMuay] =
-    db get n map { s => NakMuay(n, s) }
+  private def getByName(n: String): Either[NotFound,NakMuay] =
+    db get n map { s => Right(NakMuay(n, s)) } getOrElse Left(NotFound(n))
 
-  private def findByStance(s: Stance): Iterable[NakMuay] =
+  private def getByStance(s: Stance): Iterable[NakMuay] =
     for {
       (name, stance) <- db
       if stance == s
@@ -32,20 +32,20 @@ trait DB extends EffectRunner {
 
 }
 
-object Main extends App with DB with ProgramRunner {
+object Main extends App with DB with Programs {
 
   val program: Program[Map[Stance,Int]] =
     for {
-      nmo <- FindByName("Saenchai")
+      nmo <- GetByName("Saenchai")
       _   <- nmo match {
-               case Some(nm) => Pure(())
-               case None     => Save(NakMuay("Saenchai", Southpaw))
+               case Right(_) => Pure(())
+               case Left(_)  => Save(NakMuay("Saenchai", Southpaw))
              }
       x   <- Save(NakMuay("Yodwicha", Orthodox))
       _   <- Save(NakMuay("Petboonchu", Orthodox))
-      os  <- FindByStance(Orthodox)
+      os  <- GetByStance(Orthodox)
       oc   = os.size
-      sps <- FindByStance(Southpaw)
+      sps <- GetByStance(Southpaw)
       spc  = sps.size
     } yield Map(Orthodox -> oc, Southpaw -> spc)
 

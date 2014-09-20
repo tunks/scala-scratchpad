@@ -6,7 +6,7 @@ sealed trait Program[A] {
 }
 case class FlatMap[A,B](p: Program[A], f: A => Program[B]) extends Program[B]
 
-trait ProgramRunner extends EffectRunner {
+trait Programs extends Effects {
 
    @annotation.tailrec
    final def runProgram[A](p: Program[A]): A =
@@ -23,6 +23,9 @@ trait ProgramRunner extends EffectRunner {
 
 }
 
+sealed trait Problem
+case class NotFound(detail: String) extends Problem
+
 sealed trait Stance
 case object Orthodox extends Stance
 case object Southpaw extends Stance
@@ -33,9 +36,9 @@ sealed trait Effect[A] extends Program[A]
 case class Pure[A](a: A) extends Effect[A]
 case class Save(nakMuay: NakMuay) extends Effect[Unit]
 case object Enumerate extends Effect[Iterable[NakMuay]]
-case class FindByName(name: String) extends Effect[Option[NakMuay]]
-case class FindByStance(stance: Stance) extends Effect[Iterable[NakMuay]]
+case class GetByName(name: String) extends Effect[Either[NotFound,NakMuay]]
+case class GetByStance(stance: Stance) extends Effect[Iterable[NakMuay]]
 
-trait EffectRunner {
+trait Effects {
   def runEffect[A](a: Effect[A]): A
 }
