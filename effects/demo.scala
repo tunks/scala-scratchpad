@@ -6,6 +6,7 @@ trait DB extends Effects {
 
    override def runEffect[A](a: Effect[A]): A =
      a match {
+       case Log(x)         => println(s"[info] $x")
        case Pure(a)        => a
        case Save(n)        => save(n)
        case Enumerate      => enumerate()
@@ -39,7 +40,10 @@ object Main extends App with DB with Programs {
       nmo <- GetByName("Saenchai")
       _   <- nmo match {
                case Right(_) => Pure(())
-               case Left(_)  => Save(NakMuay("Saenchai", Southpaw))
+               case Left(NotFound(d)) =>
+                 Log(s"not found: $d") andThen
+                 Log("creating new record for Senchai") andThen
+                 Save(NakMuay("Saenchai", Southpaw))
              }
       _   <- Save(NakMuay("Yodwicha", Orthodox))
       _   <- Save(NakMuay("Petboonchu", Orthodox))

@@ -3,6 +3,7 @@ package effects
 sealed trait Program[A] {
   final def map[B](f: A => B): Program[B] = flatMap(f andThen Pure.apply)
   final def flatMap[B](f: A => Program[B]): Program[B] = FlatMap(this, f)
+  final def andThen[B](p: => Program[B]): Program[B] = FlatMap(this, {_:A => p})
 }
 case class FlatMap[A,B](p: Program[A], f: A => Program[B]) extends Program[B]
 
@@ -33,6 +34,7 @@ case object Southpaw extends Stance
 case class NakMuay(name: String, stance: Stance)
 
 sealed trait Effect[A] extends Program[A]
+case class Log(x: Any) extends Effect[Unit]
 case class Pure[A](a: A) extends Effect[A]
 case class Save(nakMuay: NakMuay) extends Effect[Unit]
 case object Enumerate extends Effect[Iterable[NakMuay]]
