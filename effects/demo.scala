@@ -41,7 +41,7 @@ object Main extends App with DB with Programs {
                case Right(_) => Pure(())
                case Left(_)  => Save(NakMuay("Saenchai", Southpaw))
              }
-      x   <- Save(NakMuay("Yodwicha", Orthodox))
+      _   <- Save(NakMuay("Yodwicha", Orthodox))
       _   <- Save(NakMuay("Petboonchu", Orthodox))
       os  <- GetByStance(Orthodox)
       oc   = os.size
