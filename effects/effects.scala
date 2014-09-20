@@ -24,17 +24,12 @@ trait ProgramRunner extends EffectRunner {
     }
 }
 
-sealed trait Problem
-case class NotFound(detail: String) extends Problem
-
-object `package` {
-  type Pair = Tuple2[String,String]
-}
+case class NotFound(detail: String) 
 
 sealed trait Effect[A] extends Program[A]
 case class Log(x: Any) extends Effect[Unit]
 case class Pure[A](a: A) extends Effect[A]
-case class Save(x: Pair) extends Effect[Unit]
-case object Enumerate extends Effect[Iterable[Pair]]
-case class GetByKey(k: String) extends Effect[Either[NotFound,Pair]]
-case class GetByValue(v: String) extends Effect[Iterable[Pair]]
+case class Save(x: (String,String)) extends Effect[Unit]
+case object Enumerate extends Effect[Iterable[(String,String)]]
+case class GetByKey(k: String) extends Effect[Either[NotFound,(String,String)]]
+case class GetByValue(v: String) extends Effect[Iterable[(String,String)]]

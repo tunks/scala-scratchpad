@@ -16,20 +16,19 @@ trait SimpleImpl extends EffectRunner {
 
   private var db: Map[String,String] = Map.empty
 
-  private def save(x: Pair): Unit = db = db + x
+  private def save(x: (String,String)): Unit = db = db + x
 
-  private def enumerate(): Iterable[Pair] = db
+  private def enumerate(): Iterable[(String,String)] = db
 
-  private def getByKey(k: String): Either[NotFound,Pair] =
+  private def getByKey(k: String): Either[NotFound,(String,String)] =
     db get k map { v => Right((k,v)) } getOrElse Left(NotFound(k))
 
-  private def getByValue(v: String): Iterable[Pair] =
+  private def getByValue(v: String): Iterable[(String,String)] =
     for {
       kv <- db
       (_, value) = kv
       if value == v
     } yield kv
-
 }
 
 object Main extends App with SimpleImpl with ProgramRunner {
