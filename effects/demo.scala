@@ -2,57 +2,36 @@ package demo
 
 import effects._
 
-trait DB extends Effects {
+trait SimpleImpl extends EffectRunner {
 
    override def runEffect[A](a: Effect[A]): A =
      a match {
-       case Log(x)         => println(s"[info] $x")
-       case Pure(a)        => a
-       case Save(n)        => save(n)
-       case Enumerate      => enumerate()
-       case GetByName(n)   => getByName(n)
-       case GetByStance(s) => getByStance(s)
+       case Log(x)        => println(s"[info] $x")
+       case Pure(a)       => a
+       case Save(n)       => save(n)
+       case Enumerate     => enumerate()
+       case GetByKey(k)   => getByKey(k)
+       case GetByValue(v) => getByValue(v)
      }
 
-  private var db: Map[String, Stance] = Map.empty
+  private var db: Map[String,String] = Map.empty
 
-  private def save(n: NakMuay): Unit =
-    db = db + (n.name -> n.stance)
+  private def save(x: Pair): Unit = db = db + x
 
-  private def enumerate(): Iterable[NakMuay] =
-    db map { case (n,s) => NakMuay(n, s) }
+  private def enumerate(): Iterable[Pair] = db
 
-  private def getByName(n: String): Either[NotFound,NakMuay] =
-    db get n map { s => Right(NakMuay(n, s)) } getOrElse Left(NotFound(n))
+  private def getByKey(k: String): Either[NotFound,Pair] =
+    db get k map { v => Right((k,v)) } getOrElse Left(NotFound(k))
 
-  private def getByStance(s: Stance): Iterable[NakMuay] =
+  private def getByValue(v: String): Iterable[Pair] =
     for {
-      (name, stance) <- db
-      if stance == s
-    } yield NakMuay(name, stance)
+      kv <- db
+      (_, value) = kv
+      if value == v
+    } yield kv
 
 }
 
-object Main extends App with DB with Programs {
-
-  val program: Program[Map[Stance,Int]] =
-    for {
-      nmo <- GetByName("Saenchai")
-      _   <- nmo match {
-               case Right(_) => Pure(())
-               case Left(NotFound(d)) =>
-                 Log(s"not found: $d") andThen
-                 Log("creating new record for Senchai") andThen
-                 Save(NakMuay("Saenchai", Southpaw))
-             }
-      _   <- Save(NakMuay("Yodwicha", Orthodox))
-      _   <- Save(NakMuay("Petboonchu", Orthodox))
-      os  <- GetByStance(Orthodox)
-      oc   = os.size
-      sps <- GetByStance(Southpaw)
-      spc  = sps.size
-    } yield Map(Orthodox -> oc, Southpaw -> spc)
-
-  println(runProgram(program))
-
+object Main extends App with SimpleImpl with ProgramRunner {
+  println(runProgram(programs.program1))
 }
