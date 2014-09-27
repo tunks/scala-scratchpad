@@ -16,7 +16,7 @@ case class SaveThing(x: String) extends Effect[Unit]
 case object GetThings extends Effect[Seq[String]]
 ```
 
-Given a database implementation, we can write our effects interpreter:
+Given a database implementation, we write our effects interpreter:
 
 ```scala
 object DB {
@@ -54,7 +54,7 @@ def respond(x: Response): Unit =
   }
 ```
 
-Now we can build our `Program[Response]` structures:
+Now we build our `Program[Response]` structures:
 
 ```scala
 object Programs {
@@ -80,7 +80,7 @@ object Programs {
 }
 ```
 
-Finally, we can tie them to some endpoints:
+Finally, we tie them to some endpoints:
 
 ```scala
 class Demo extends HttpServlet {
