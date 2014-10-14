@@ -106,11 +106,6 @@ James Earl Douglas<br /><a href="https://twitter.com/jearldouglas">@jearldouglas
 <span class="kw">def</span> <span class="fu">withdraw</span>(x: Float): List[Float] =&gt; (Float, List[Float]) =
   { account =&gt; (account.<span class="fu">sum</span>, account :+ (-x)) }</code></pre>
 <h2 id="improvements">Improvements</h2>
-<pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">def</span> <span class="fu">deposit</span>(x: Float): List[Float] =&gt; (Float, List[Float]) =
-  { account =&gt; (account.<span class="fu">sum</span>, account :+ x) }
-
-<span class="kw">def</span> <span class="fu">withdraw</span>(x: Float): List[Float] =&gt; (Float, List[Float]) =
-  { account =&gt; (account.<span class="fu">sum</span>, account :+ (-x)) }</code></pre>
 <ul>
 <li>Immutable: <code>account</code> reference can not change</li>
 <li>Declarative: evaluating <code>deposit</code> or <code>withdraw</code> does not run the transaction</li>
