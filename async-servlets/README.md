@@ -1,4 +1,4 @@
-# Asynchronous Scala Servlets
+# Asynchronous processing with Servlets
 
 *October 14, 2014*
 
