@@ -73,14 +73,6 @@ def withdraw(x: Float): List[Float] => (Float, List[Float]) =
 
 ## Improvements
 
-```scala
-def deposit(x: Float): List[Float] => (Float, List[Float]) =
-  { account => (account.sum, account :+ x) }
-
-def withdraw(x: Float): List[Float] => (Float, List[Float]) =
-  { account => (account.sum, account :+ (-x)) }
-```
-
 * Immutable: `account` reference can not change
 * Declarative: evaluating `deposit` or `withdraw` does not run the transaction
 * Consistent: `account` accesses are certain to be identical
