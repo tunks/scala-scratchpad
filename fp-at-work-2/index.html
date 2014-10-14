@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="James Earl Douglas" />
+  <title>Putting functional programming to work</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; }
+code > span.dt { color: #902000; }
+code > span.dv { color: #40a070; }
+code > span.bn { color: #40a070; }
+code > span.fl { color: #40a070; }
+code > span.ch { color: #4070a0; }
+code > span.st { color: #4070a0; }
+code > span.co { color: #60a0b0; font-style: italic; }
+code > span.ot { color: #007020; }
+code > span.al { color: #ff0000; font-weight: bold; }
+code > span.fu { color: #06287e; }
+code > span.er { color: #ff0000; font-weight: bold; }
+  </style>
+  <link rel="stylesheet" type="text/css" media="screen, projection, print"
+    href="http://www.w3.org/Talks/Tools/Slidy2/styles/slidy.css" />
+  <script src="http://www.w3.org/Talks/Tools/Slidy2/scripts/slidy.js"
+    charset="utf-8" type="text/javascript"></script>
+</head>
+<body>
+<div class="slide titlepage">
+  <h1 class="title">Putting functional programming to work</h1>
+  <p class="author">
+James Earl Douglas<br /><a href="https://twitter.com/jearldouglas">@jearldouglas</a>
+  </p>
+  <p class="date">October 13, 2014<br />Scala Bay</p>
+</div>
+<div id="abstract" class="slide section level1">
+<h1>Abstract</h1>
+<ul>
+<li>We like our code to be safe, composable, and reusable</li>
+<li>Functional programming* can make it happen</li>
+<li>We can use FP to achieve these goals in real-world** code</li>
+</ul>
+<p><em>This is an adaptation of <a href="http://bit.ly/real-world-fp">Real-World Functional Programming <span style="white-space:nowrap">(bit.ly/real-world-fp)</span></a>.</em></p>
+</div>
+<div id="words-mean-stuff" class="slide section level1">
+<h1>Words mean stuff</h1>
+<p><em>Functional programming*</em></p>
+<p>* consider FP ≈ referential transparency</p>
+<p><em>Real-world**</em></p>
+<p>** for readability, we'll use a simplified (but RW analogous) example</p>
+</div>
+<div id="problem-space" class="slide section level1">
+<h1>Problem space</h1>
+<p>Consider a banking ATM. A user should be able to:</p>
+<ul>
+<li>Check their balance</li>
+<li>Deposit funds</li>
+<li>Withdraw funds (and charge a fee)</li>
+</ul>
+</div>
+<div id="ugh-another-atm-example" class="slide section level1">
+<h1>Ugh, another ATM example?</h1>
+<p>Accurate handling of state is kind of important, because money.</p>
+</div>
+<div id="data-types" class="slide section level1">
+<h1>Data types</h1>
+<p>We'll track a bank account as a simple transaction register.</p>
+<ul>
+<li>The type of each individual contribution and deduction is <code>Float</code></li>
+<li>The type of an account is <code>List[Float]</code></li>
+</ul>
+</div>
+<div id="state-change-as-a-side-effect" class="slide section level1">
+<h1>State change as a side effect</h1>
+<pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">var</span> account: List[Float] = ...
+
+<span class="kw">def</span> <span class="fu">deposit</span>(x: Float): Float = {
+  account = account :+ x
+  account.<span class="fu">sum</span>
+}
+
+<span class="kw">def</span> <span class="fu">withdraw</span>(x: Float): Float = {
+  account = account :+ (-x)
+  account.<span class="fu">sum</span>
+}</code></pre>
+<h2 id="drawbacks">Drawbacks</h2>
+<ul>
+<li>Mutable: <code>account</code> reference can change any time</li>
+<li>Imperative: evaluating <code>deposit</code> or <code>withdraw</code> makes the transaction happen</li>
+<li>Inconsistent: <code>account</code> reference is accessed multiple times</li>
+</ul>
+</div>
+<div id="state-change-as-a-computational-effect" class="slide section level1">
+<h1>State change as a computational effect</h1>
+<pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">def</span> <span class="fu">deposit</span>(x: Float): List[Float] =&gt; (Float, List[Float]) =
+  { account =&gt; (account.<span class="fu">sum</span>, account :+ x) }
+
+<span class="kw">def</span> <span class="fu">withdraw</span>(x: Float): List[Float] =&gt; (Float, List[Float]) =
+  { account =&gt; (account.<span class="fu">sum</span>, account :+ (-x)) }</code></pre>
+<h2 id="improvements">Improvements</h2>
+<pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">def</span> <span class="fu">deposit</span>(x: Float): List[Float] =&gt; (Float, List[Float]) =
+  { account =&gt; (account.<span class="fu">sum</span>, account :+ x) }
+
+<span class="kw">def</span> <span class="fu">withdraw</span>(x: Float): List[Float] =&gt; (Float, List[Float]) =
+  { account =&gt; (account.<span class="fu">sum</span>, account :+ (-x)) }</code></pre>
+<ul>
+<li>Immutable: <code>account</code> reference can not change</li>
+<li>Declarative: evaluating <code>deposit</code> or <code>withdraw</code> does not run the transaction</li>
+<li>Consistent: <code>account</code> accesses are certain to be identical</li>
+</ul>
+</div>
+<div id="representing-a-state-action" class="slide section level1">
+<h1>Representing a state action</h1>
+<pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">case</span> <span class="kw">class</span> State[S,A](run: S =&gt; (A,S))</code></pre>
+<p>A <code>State</code> wraps a function <code>run</code> which, given a state <code>S</code>, performs some computation and produces both an <code>A</code> and a new state <code>S</code>.</p>
+</div>
+<div id="composing-with-pure-functions" class="slide section level1">
+<h1>Composing with pure functions</h1>
+<pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">case</span> <span class="kw">class</span> State[S,A](run: S =&gt; (A,S)) {
+
+  <span class="kw">def</span> map[B](f: A =&gt; B): State[S,B] =
+    State { run andThen { <span class="kw">case</span> (a,s) =&gt; (<span class="fu">f</span>(a), s) } }
+
+}</code></pre>
+<p><code>map</code> builds a new state action that, once run, has its output run through <code>f</code>, converting it from an <code>A</code> to a <code>B</code>.</p>
+</div>
+<div id="composing-with-pure-functions-1" class="slide section level1">
+<h1>Composing with pure functions</h1>
+<pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">type</span> Tx[A] = State[List[Float],A]
+
+<span class="kw">val</span> balance: Tx[Float] =
+  State { account =&gt; (account.<span class="fu">sum</span>, account) }
+
+<span class="kw">val</span> report: Tx[String] =
+  balance map { x: Float =&gt; <span class="st">&quot;Your balance is &quot;</span> + x }</code></pre>
+</div>
+<div id="composing-with-other-state-actions" class="slide section level1">
+<h1>Composing with other state actions</h1>
+<pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">case</span> <span class="kw">class</span> State[S,A](run: S =&gt; (A,S)) {
+
+  <span class="kw">def</span> flatMap[B](f: A =&gt; State[S,B]): State[S,B] =
+    State { run andThen { <span class="kw">case</span> (a,s) =&gt; <span class="fu">f</span>(a).<span class="fu">run</span>(s) } }
+
+}</code></pre>
+<p><code>flatMap</code> builds a new state action that, once run, uses the output to compute the result of another state action.</p>
+</div>
+<div id="composing-with-state-actions" class="slide section level1">
+<h1>Composing with state actions</h1>
+<pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">def</span> <span class="fu">deduct</span>(x: Float): Tx[Float] =
+  State { account =&gt;
+    <span class="kw">if</span> (account.<span class="fu">sum</span> &gt;= x) (x, account :+ (-x))
+    <span class="kw">else</span> (<span class="dv">0</span>, account)
+  }
+
+<span class="kw">def</span> <span class="fu">deductWithFee</span>(x: Float]: Tx[Float] =
+  <span class="fu">deduct</span>(x) flatMap { y =&gt;
+    State { account =&gt;
+      <span class="kw">val</span> fee = <span class="dv">3</span>
+      (y + fee, account :+ (-fee))
+    }
+  }</code></pre>
+</div>
+<div id="the-state-monad" class="slide section level1">
+<h1>The state monad</h1>
+<pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">case</span> <span class="kw">class</span> State[S,A](run: S =&gt; (A,S)) {
+ 
+  <span class="kw">def</span> map[B](f: A =&gt; B): State[S,B] =
+    State { run andThen { <span class="kw">case</span> (a,s) =&gt; (<span class="fu">f</span>(a), s) } }
+
+  <span class="kw">def</span> flatMap[B](f: A =&gt; State[S,B]): State[S,B] =
+    State { run andThen { <span class="kw">case</span> (a,s) =&gt; <span class="fu">f</span>(a).<span class="fu">run</span>(s) } }
+
+}</code></pre>
+</div>
+<div id="the-claims" class="slide section level1">
+<h1>The claims</h1>
+<ul>
+<li>Safe</li>
+<li>Composable</li>
+<li>Reusable</li>
+</ul>
+</div>
+<div id="safety" class="slide section level1">
+<h1>Safety</h1>
+<pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">def</span> <span class="fu">contribute</span>(x: Float): Tx[Unit] =
+  State { account =&gt; ((), account :+ x) }</code></pre>
+<ul>
+<li>No mutable references (i.e. <code>var account = ...</code>)</li>
+<li>No mutable data structures (e.g. <code>account.append(...)</code>)</li>
+<li>State actions are necessarily atomic</li>
+<li>State actions are optionally transactional*</li>
+</ul>
+<p><em>* Depending on the later implementation of an interpreter</em></p>
+</div>
+<div id="composability" class="slide section level1">
+<h1>Composability</h1>
+<pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">def</span> <span class="fu">deposit</span>(x: Float): Tx[(Float,Float)] = 
+  <span class="kw">for</span> {
+    _ &lt;- <span class="fu">contribute</span>(x) <span class="co">// Tx[Unit]</span>
+    b &lt;- balance       <span class="co">// Tx[Float]</span>
+  } <span class="kw">yield</span> (<span class="dv">0</span>,b)
+
+<span class="kw">def</span> <span class="fu">withdraw</span>(x: Float): Tx[(Float,Float)] =
+  <span class="kw">for</span> {
+    w &lt;- <span class="fu">deduct</span>(x)     <span class="co">// Tx[Float]</span>
+    b &lt;- balance       <span class="co">// Tx[Float]</span>
+  } <span class="kw">yield</span> (w,b)</code></pre>
+<ul>
+<li>Big state actions can be constructed from little state actions</li>
+<li>Composition induces no side effects</li>
+<li>Composition triggers no state transitions</li>
+</ul>
+</div>
+<div id="reusability" class="slide section level1">
+<h1>Reusability</h1>
+<pre class="sourceCode scala"><code class="sourceCode scala"> <span class="kw">def</span> <span class="fu">depositThenWithdraw</span>(d: Float, w: Float): Tx[(Float,Float)] =
+  <span class="kw">for</span> {
+    _ &lt;- <span class="fu">deposit</span>(d)  <span class="co">// Tx[(Float,Float)]</span>
+    w &lt;- <span class="fu">withdraw</span>(w) <span class="co">// Tx[(Float,Float)]</span>
+  } <span class="kw">yield</span> w</code></pre>
+<ul>
+<li>State actions can be composed in different ways to create different behavior</li>
+</ul>
+</div>
+<div id="interpreter" class="slide section level1">
+<h1>Interpreter</h1>
+<p>To make it go, we need a way to run a state action:</p>
+<pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">def</span> <span class="fu">run</span>(x: Tx[(Float,Float)]): ((Float,Float),List[Float]) = {
+  db.<span class="fu">beginTransaction</span>()
+  <span class="kw">val</span> account = db.<span class="fu">getAccount</span>(...)
+  <span class="kw">val</span> ((w,b),account2) = x.<span class="fu">run</span>(account)
+  db.<span class="fu">updateAccount</span>(account2)
+  db.<span class="fu">commitTransaction</span>(...)
+  ((w,b),account2)
+}</code></pre>
+</div>
+<div id="problems" class="slide section level1">
+<h1>Problems</h1>
+<ul>
+<li>Synchronizing access to mutable references</li>
+<li>Wrapping state actions in transactions</li>
+</ul>
+</div>
+<div id="solutions" class="slide section level1">
+<h1>Solutions</h1>
+<p>We can't escape mutability, but we <em>can</em> push it to the outer edges of our program, and tailor the interpreter to the mechanism of state persistence.</p>
+</div>
+<div id="demo" class="slide section level1">
+<h1>Demo</h1>
+<script src="//scalave.earldouglas.com/scalave.js">
+
+  case class State[S,A](run: S => (A,S)) {
+    def map[B](f: A => B): State[S,B] =
+      State { run andThen { case (a,s) => (f(a), s) } }
+    def flatMap[B](f: A => State[S,B]): State[S,B] =
+      State { run andThen { case (a,s) => f(a).run(s) } }
+  }
+
+  object Tx {
+    def apply[A](run: List[Float] => (A, List[Float])) = State(run)
+  }
+
+  val action =
+    for {
+      _ <- Tx { account => ((), account :+ 100F) }
+      x  = 20F
+      w <- Tx { account =>
+             if (account.sum >= x) (x, account :+ (-x))
+             else (0F, account)
+           }
+      b <- Tx { account => (account.sum, account) }
+    } yield (w,b)
+
+  action.run(Nil)
+
+</script>
+
+
+</div>
+</body>
+</html>
