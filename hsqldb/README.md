@@ -2,8 +2,9 @@
 
 ## Dependencies
 
-Find the desired version of `org.hsqldb:hsqldb` [Maven
-Central](http://search.maven.org/#search|ga|1|org.hsqldb.hsqldb):
+[Find the desired version of
+`org.hsqldb:hsqldb`](http://search.maven.org/#search|ga|1|org.hsqldb.hsqldb)
+on Maven Central:
 
 ![](readme/maven-search.png)
 
